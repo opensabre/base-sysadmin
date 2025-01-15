@@ -1,0 +1,54 @@
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      lettuce:
+        pool:
+          max-active: 300
+      #password: ${REDIS_PASSWORD:123456}
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:${DATASOURCE_DBTYPE:mysql}://${DATASOURCE_HOST:localhost}:${DATASOURCE_PORT:3306}/os_base_sysadmin?characterEncoding=UTF-8&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DATASOURCE_USERNAME:root}
+    password: ${DATASOURCE_PASSWORD:root123}
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 20
+# opensabre framework配置
+opensabre:
+  sensitive:
+    log:
+      enabled: false # 日志脱敏开关，默认关闭
+      rules: mobile,idCard,phone,email
+  rest:
+    swagger:
+      version: v0.0.1
+      title: Opensabre Sysadmin API
+      description: Opensabre Sysadmin REST API
+      licenseUrl: https://github.com/opensabre/base-sysadmin
+      licenseName: Apache 2.0
+      wikiUrl: https://opensabre.github.io/docs
+      wikiDocumentation: Opensabre Sysadmin Wiki Documentation
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  level:
+    io.github.opensabre: debug
+    java.sql.PreparedStatement: debug
+
+mybatis-plus:
+  global-config:
+    db-config:
+      table-prefix: base_sys_
+

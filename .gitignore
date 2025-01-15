@@ -1,3 +1,23 @@
+target
+logs
+!.mvn/wrapper/maven-wrapper.jar
+.DS_Store
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
 # Compiled class file
 *.class
 
