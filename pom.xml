@@ -22,7 +22,7 @@
     <parent>
         <artifactId>opensabre-base-dependencies</artifactId>
         <groupId>io.github.opensabre</groupId>
-        <version>0.1.1</version>
+        <version>0.1.2</version>
     </parent>
 
     <properties>
@@ -52,15 +52,6 @@
         <dependency>
             <groupId>io.github.opensabre</groupId>
             <artifactId>opensabre-starter-cache</artifactId>
-        </dependency>
-        <!--security资源服务-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
         <!--测试框架-->
         <dependency>
@@ -112,8 +103,8 @@
             </plugin>
             <!-- docker镜像构建 -->
             <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>dockerfile-maven-plugin</artifactId>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
