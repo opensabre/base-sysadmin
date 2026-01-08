@@ -1,9 +1,9 @@
-package io.github.opensabre.sysadmin.service;
+package io.github.opensabre.sysadmin.audit.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.github.opensabre.sysadmin.model.param.AuditLogQueryParam;
-import io.github.opensabre.sysadmin.model.po.AuditLog;
+import io.github.opensabre.sysadmin.audit.model.param.AuditLogQueryParam;
+import io.github.opensabre.sysadmin.audit.model.po.AuditLog;
 
 /**
  * 审计日志服务接口

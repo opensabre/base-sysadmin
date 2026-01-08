@@ -52,3 +52,15 @@ mybatis-plus:
     db-config:
       table-prefix: base_sys_
 
+# Captcha configuration
+captcha:
+  security:
+    ip:
+      max-attempts: 500
+      time-window: 3600  # 1 hour
+    device:
+      max-attempts: 500
+      time-window: 3600  # 1 hour
+    min-interval: 60  # Minimum 60 seconds between sends
+    max-attempts: 3   # Max verification attempts
+

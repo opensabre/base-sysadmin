@@ -1,7 +1,7 @@
-package io.github.opensabre.sysadmin.dao;
+package io.github.opensabre.sysadmin.audit.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.github.opensabre.sysadmin.model.po.AuditLog;
+import io.github.opensabre.sysadmin.audit.model.po.AuditLog;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

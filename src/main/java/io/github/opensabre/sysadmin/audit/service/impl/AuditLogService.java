@@ -1,13 +1,13 @@
-package io.github.opensabre.sysadmin.service.impl;
+package io.github.opensabre.sysadmin.audit.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.github.opensabre.sysadmin.model.po.AuditLog;
-import io.github.opensabre.sysadmin.dao.AuditLogMapper;
-import io.github.opensabre.sysadmin.model.param.AuditLogQueryParam;
-import io.github.opensabre.sysadmin.service.IAuditLogService;
+import io.github.opensabre.sysadmin.audit.model.po.AuditLog;
+import io.github.opensabre.sysadmin.audit.dao.AuditLogMapper;
+import io.github.opensabre.sysadmin.audit.model.param.AuditLogQueryParam;
+import io.github.opensabre.sysadmin.audit.service.IAuditLogService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;

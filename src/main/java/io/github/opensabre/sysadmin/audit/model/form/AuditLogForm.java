@@ -1,8 +1,8 @@
-package io.github.opensabre.sysadmin.model.form;
+package io.github.opensabre.sysadmin.audit.model.form;
 
 import io.github.opensabre.boot.annotations.OperationType;
 import io.github.opensabre.common.web.entity.form.BaseForm;
-import io.github.opensabre.sysadmin.model.po.AuditLog;
+import io.github.opensabre.sysadmin.audit.model.po.AuditLog;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

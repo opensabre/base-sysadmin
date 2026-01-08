@@ -1,4 +1,4 @@
-package io.github.opensabre.sysadmin.model.po;
+package io.github.opensabre.sysadmin.audit.model.po;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.github.opensabre.boot.annotations.OperationType;

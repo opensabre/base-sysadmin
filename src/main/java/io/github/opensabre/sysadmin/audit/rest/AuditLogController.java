@@ -1,11 +1,11 @@
-package io.github.opensabre.sysadmin.rest;
+package io.github.opensabre.sysadmin.audit.rest;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import io.github.opensabre.sysadmin.model.param.AuditLogQueryParam;
-import io.github.opensabre.sysadmin.model.form.AuditLogQueryForm;
-import io.github.opensabre.sysadmin.model.form.AuditLogForm;
-import io.github.opensabre.sysadmin.model.po.AuditLog;
-import io.github.opensabre.sysadmin.service.IAuditLogService;
+import io.github.opensabre.sysadmin.audit.model.param.AuditLogQueryParam;
+import io.github.opensabre.sysadmin.audit.model.form.AuditLogQueryForm;
+import io.github.opensabre.sysadmin.audit.model.form.AuditLogForm;
+import io.github.opensabre.sysadmin.audit.model.po.AuditLog;
+import io.github.opensabre.sysadmin.audit.service.IAuditLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

@@ -1,4 +1,4 @@
-package io.github.opensabre.sysadmin.model.param;
+package io.github.opensabre.sysadmin.audit.model.param;
 
 import io.github.opensabre.boot.annotations.OperationType;
 import io.github.opensabre.persistence.entity.param.BaseParam;

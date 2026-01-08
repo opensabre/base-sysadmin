@@ -1,4 +1,4 @@
-package io.github.opensabre.sysadmin.model.form;
+package io.github.opensabre.sysadmin.audit.model.form;
 
 import io.github.opensabre.boot.annotations.OperationType;
 import io.github.opensabre.persistence.entity.form.BaseQueryForm;
@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
-import io.github.opensabre.sysadmin.model.param.AuditLogQueryParam;
+import io.github.opensabre.sysadmin.audit.model.param.AuditLogQueryParam;
 /**
  * 审计日志查询表单
  */
