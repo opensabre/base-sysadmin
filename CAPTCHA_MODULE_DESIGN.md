@@ -2,9 +2,9 @@
 
 ## 1. 概述 (Overview)
 
-验证码模块是一个高度可扩展的安全验证系统，支持多种验证码类型（图片、短信、邮件等），提供完善的速率限制和安全控制机制。采用面向接口编程的设计模式，便于扩展新的验证码类型。
+验证码模块是一个高度可扩展的安全验证系统，支持多种验证码类型（图片、短信等），提供完善的速率限制和安全控制机制。采用面向接口编程的设计模式，便于扩展新的验证码类型。
 
-The captcha module is a highly extensible security verification system that supports multiple captcha types (image, SMS, email, etc.) with comprehensive rate limiting and security controls. It follows interface-based programming design patterns for easy extension of new captcha types.
+The captcha module is a highly extensible security verification system that supports multiple captcha types (image, SMS, etc.) with comprehensive rate limiting and security controls. It follows interface-based programming design patterns for easy extension of new captcha types.
 
 ## 2. 架构设计 (Architecture Design)
 
@@ -13,14 +13,13 @@ The captcha module is a highly extensible security verification system that supp
 ```mermaid
 graph TB
     A[CaptchaController] --> B[CaptchaService]
-    B --> C[CaptchaGenerator]
-    B --> D[CaptchaStorageService]
-    B --> E[RateLimitService]
+    B --> C[ICaptchaGenerator]
+    B --> D[ICaptchaStorageService]
+    B --> E[IRateLimitService]
     C --> F[ImageCaptchaGenerator]
     C --> G[SmsCaptchaGenerator]
-    C --> H[EmailCaptchaGenerator]
-    D --> I[RedisCaptchaStorage]
-    E --> J[SecurityControls]
+    D --> I[RedisICaptchaStorage]
+    E --> J[Rate Limiting Logic]
 ```
 
 ### 2.2 核心组件说明 (Core Components)
@@ -29,14 +28,18 @@ graph TB
 - **CaptchaController**: REST API入口，处理验证码的生成和验证请求
 
 #### 2.2.2 服务层 (Service Layer)
-- **CaptchaService**: 核心业务逻辑协调器
-- **CaptchaGenerator**: 验证码生成器接口及其实现
-- **CaptchaStorageService**: 验证码存储服务接口及其实现
-- **RateLimitService**: 速率限制服务
+- **ICaptchaService**: 验证码服务接口
+- **CaptchaService**: 抽象基类，提供通用验证码业务逻辑
+- **ImageCaptchaService**: 图形验证码具体服务实现
+- **SmsCaptchaService**: 短信验证码具体服务实现
+- **ICaptchaGenerator**: 验证码生成器接口
+- **ICaptchaStorageService**: 验证码存储服务接口
+- **IRateLimitService**: 速率限制服务
 
 #### 2.2.3 数据模型层 (Model Layer)
 - **CaptchaInfo**: 验证码核心实体
 - **ClientInfo**: 客户端信息实体
+- **CaptchaVo**: 验证码视图对象
 - **BusinessScenario**: 业务场景枚举
 - **CaptchaType**: 验证码类型枚举
 
@@ -48,48 +51,67 @@ graph TB
 ```mermaid
 classDiagram
     class CaptchaController {
-        +generateCaptcha()
-        +validateCaptcha()
+        +send(businessScenario, phoneNo, imageCaptchaId, imageCaptchaCode)
+        +send(businessScenario, requestKey)
+        +verify(businessScenario, captchaId, inputCode)
+    }
+    
+    class ICaptchaService {
+        <<interface>>
+        +generateCaptcha(businessKey, businessScenario, clientInfo)
+        +validateCaptcha(captchaId, scenario, inputCode)
     }
     
     class CaptchaService {
-        -captchaGenerators: List~CaptchaGenerator~
+        -captchaGenerator: ICaptchaGenerator
         -captchaStorage: ICaptchaStorageService
         -rateLimitService: IRateLimitService
         -captchaConfig: CaptchaConfig
         +generateCaptcha()
         +validateCaptcha()
+        #beforeGenerateCaptcha()
+        #afterGenerateCaptcha()
+        #customValidateCaptcha()
+    }
+    
+    class ImageCaptchaService {
+        +beforeGenerateCaptcha()
+        +afterGenerateCaptcha()
+        +customValidateCaptcha()
+    }
+    
+    class SmsCaptchaService {
+        +beforeGenerateCaptcha()
+        +afterGenerateCaptcha()
+        +customValidateCaptcha()
     }
     
     class ICaptchaGenerator {
         <<interface>>
-        +generate()
+        +generate(businessKey, scenario, clientInfo)
         +getType()
-        +validate()
     }
     
     class ImageCaptchaGenerator {
         +generate()
         +getType()
-        +validate()
     }
     
     class SmsCaptchaGenerator {
         +generate()
         +getType()
-        +validate()
     }
     
     class ICaptchaStorageService {
         <<interface>>
-        +save()
-        +get()
-        +delete()
-        +updateVerified()
-        +incrementAttempts()
+        +save(captchaInfo, businessScenario)
+        +get(captchaKey, businessScenario)
+        +delete(captchaKey, businessScenario)
+        +updateVerified(captchaKey, businessScenario, verified)
+        +incrementAttempts(captchaKey, businessScenario)
     }
     
-    class RedisCaptchaStorage {
+    class RedisICaptchaStorage {
         -stringRedisTemplate: StringRedisTemplate
         -objectMapper: ObjectMapper
         +save()
@@ -100,25 +122,38 @@ classDiagram
     }
     
     class IRateLimitService {
-        <<interface>>
-        +checkRateLimit()
+        -stringRedisTemplate: StringRedisTemplate
         +isIpAllowed()
         +isDeviceAllowed()
-        +isTargetAllowed()
+        +isBusinessAllowed()
+        +isTargetIntervalAllowed()
     }
     
     class CaptchaInfo {
-        -captchaKey: String
+        -captchaId: String
+        -businessKey: String
         -businessScenario: BusinessScenario
         -code: String
         -captchaType: CaptchaType
-        -ip: String
-        -deviceId: String
+        -clientInfo: ClientInfo
         -createTime: LocalDateTime
         -expireTime: LocalDateTime
         -attempts: int
         -verified: boolean
         -verificationTime: String
+        -data: String
+    }
+    
+    class ClientInfo {
+        -businessId: String
+        -clientIp: String
+        -deviceId: String
+    }
+    
+    class CaptchaVo {
+        -captchaId: String
+        -imageData: String
+        -expireTime: Integer
     }
     
     class BusinessScenario {
@@ -126,6 +161,14 @@ classDiagram
         +LOGIN_IMAGE
         +LOGIN_SMS
         +REGISTER_IMAGE
+        +getCode()
+        +getType()
+        +getDescription()
+        +getCaptchaLength()
+        +getCaptchaExpireTime()
+        +getCaptchaAttempts()
+        +getMinInterval()
+        +getMaxLimitCount()
     }
     
     class CaptchaType {
@@ -135,17 +178,25 @@ classDiagram
         +EMAIL
         +SLIDER
         +CLICK
+        +getCode()
+        +getDescription()
     }
     
-    CaptchaController --> CaptchaService
-    CaptchaService --> ICaptchaGenerator
-    CaptchaService --> ICaptchaStorageService
-    CaptchaService --> IRateLimitService
+    CaptchaController --> ICaptchaService
+    ICaptchaService <|.. CaptchaService
+    CaptchaService <|-- ImageCaptchaService
+    CaptchaService <|-- SmsCaptchaService
+    CaptchaService ..> ICaptchaGenerator
+    CaptchaService ..> ICaptchaStorageService
+    CaptchaService ..> IRateLimitService
     ICaptchaGenerator <|.. ImageCaptchaGenerator
     ICaptchaGenerator <|.. SmsCaptchaGenerator
-    ICaptchaStorageService <|.. RedisCaptchaStorage
+    ICaptchaStorageService <|.. RedisICaptchaStorage
+    IRateLimitService ..> StringRedisTemplate
     CaptchaInfo --> BusinessScenario
     CaptchaInfo --> CaptchaType
+    CaptchaInfo --> ClientInfo
+    CaptchaService ..> CaptchaConfig
 ```
 
 ## 4. 时序图 (Sequence Diagrams)
@@ -157,23 +208,36 @@ sequenceDiagram
     participant Client
     participant CaptchaController
     participant CaptchaService
-    participant RateLimitService
-    participant CaptchaGenerator
-    participant CaptchaStorage
+    participant IRateLimitService
+    participant ICaptchaGenerator
+    participant ICaptchaStorageService
     
-    Client->>CaptchaController: POST /captcha/generate
-    CaptchaController->>CaptchaService: generateCaptcha(type, params)
+    Client->>CaptchaController: POST /captcha/send/{type}
+    CaptchaController->>CaptchaService: generateCaptcha(businessKey, scenario, clientInfo)
     
-    CaptchaService->>RateLimitService: checkRateLimits(params)
-    RateLimitService-->>CaptchaService: rate limits passed
+    CaptchaService->>IRateLimitService: isIpAllowed()
+    IRateLimitService-->>CaptchaService: rate limit check result
     
-    CaptchaService->>CaptchaGenerator: generate()
-    CaptchaGenerator-->>CaptchaService: CaptchaVo
+    CaptchaService->>IRateLimitService: isDeviceAllowed()
+    IRateLimitService-->>CaptchaService: rate limit check result
     
-    CaptchaService->>CaptchaStorage: save(CaptchaInfo)
-    CaptchaStorage-->>CaptchaService: success
+    CaptchaService->>IRateLimitService: isBusinessAllowed()
+    IRateLimitService-->>CaptchaService: rate limit check result
     
-    CaptchaService-->>CaptchaController: CaptchaVo
+    alt rate limits passed
+        CaptchaService->>CaptchaService: beforeGenerateCaptcha()
+        CaptchaService->>ICaptchaGenerator: generate()
+        ICaptchaGenerator-->>CaptchaService: CaptchaInfo
+        
+        CaptchaService->>ICaptchaStorageService: save()
+        ICaptchaStorageService-->>CaptchaService: success
+        
+        CaptchaService->>CaptchaService: afterGenerateCaptcha()
+        CaptchaService-->>CaptchaController: CaptchaVo
+    else rate limits exceeded
+        CaptchaService-->>CaptchaController: exception
+    end
+    
     CaptchaController-->>Client: Captcha Response
 ```
 
@@ -184,22 +248,31 @@ sequenceDiagram
     participant Client
     participant CaptchaController
     participant CaptchaService
-    participant CaptchaStorage
-    participant RateLimitService
+    participant ICaptchaStorageService
+    participant ICaptchaGenerator
     
-    Client->>CaptchaController: POST /captcha/validate
-    CaptchaController->>CaptchaService: validateCaptcha(sceneId, sendId, code)
+    Client->>CaptchaController: POST /captcha/verify
+    CaptchaController->>CaptchaService: validateCaptcha(captchaId, scenario, inputCode)
     
-    CaptchaService->>CaptchaStorage: get(sceneId, sendId)
-    CaptchaStorage-->>CaptchaService: CaptchaInfo
+    CaptchaService->>CaptchaService: customValidateCaptcha()
+    
+    CaptchaService->>ICaptchaStorageService: get(captchaId, scenario)
+    ICaptchaStorageService-->>CaptchaService: CaptchaInfo
     
     alt Captcha exists and not expired
-        CaptchaService->>CaptchaStorage: incrementAttempts()
-        
-        alt Code matches
-            CaptchaService->>CaptchaStorage: updateVerified(true)
-            CaptchaService-->>CaptchaController: true
-        else Code doesn't match
+        alt Captcha not verified and attempts < limit
+            alt Code matches
+                CaptchaService->>ICaptchaStorageService: delete(captchaId, scenario)
+                ICaptchaStorageService-->>CaptchaService: success
+                CaptchaService-->>CaptchaController: true
+            else Code doesn't match
+                CaptchaService->>ICaptchaStorageService: incrementAttempts()
+                ICaptchaStorageService-->>CaptchaService: success
+                CaptchaService-->>CaptchaController: false
+            end
+        else Attempts exceeded or already verified
+            CaptchaService->>ICaptchaStorageService: delete(captchaId, scenario)
+            ICaptchaStorageService-->>CaptchaService: success
             CaptchaService-->>CaptchaController: false
         end
     else Captcha not found or expired
@@ -217,8 +290,8 @@ sequenceDiagram
 graph LR
     A[客户端请求] --> B[IP速率限制]
     A --> C[设备速率限制]
-    A --> D[目标速率限制]
-    A --> E[全局速率限制]
+    A --> D[业务速率限制]
+    A --> E[目标间隔限制]
     
     B --> F{是否超过限制}
     C --> F
@@ -232,9 +305,9 @@ graph LR
 ### 5.2 安全特性 (Security Features)
 
 1. **时效性控制**: 验证码具有明确的有效期，过期自动失效
-2. **一次性使用**: 验证通过后立即标记为已验证状态
+2. **一次性使用**: 验证通过后立即删除验证码记录
 3. **尝试次数限制**: 防止暴力破解攻击
-4. **多维度限流**: IP、设备、目标、全局四个维度的速率限制
+4. **多维度限流**: IP、设备、业务三个维度的速率限制
 5. **最小间隔控制**: 防止频繁发送验证码
 6. **客户端指纹**: 记录IP和设备信息用于安全分析
 
@@ -247,18 +320,13 @@ graph LR
 @Component
 public class NewCaptchaGenerator implements ICaptchaGenerator {
     @Override
-    public CaptchaVo generate(String sceneId, Map<String, Object> params) {
+    public CaptchaInfo generate(String businessKey, BusinessScenario scenario, ClientInfo clientInfo) {
         // 实现具体的验证码生成逻辑
     }
     
     @Override
     public String getType() {
         return CaptchaType.NEW_TYPE.getCode();
-    }
-    
-    @Override
-    public boolean validate(String sceneId, String sendId, String code) {
-        // 实现验证逻辑
     }
 }
 ```
@@ -269,7 +337,40 @@ public class NewCaptchaGenerator implements ICaptchaGenerator {
 // 在BusinessScenario枚举中添加新场景
 public enum BusinessScenario {
     // ... existing scenarios
-    NEW_SCENARIO("NEW_SCENARIO", CaptchaType.NEW_TYPE, "新业务场景描述", 6, 120, 3);
+    NEW_SCENARIO("NEW_SCENARIO", CaptchaType.NEW_TYPE, "新业务场景描述", 6, 120, 3, 60, 50);
+}
+```
+
+### 6.3 实现新的服务 (Implementing New Services)
+
+```java
+@Service
+public class NewCaptchaService extends CaptchaService {
+    
+    @Autowired
+    public NewCaptchaService(NewCaptchaGenerator captchaGenerator) {
+        super(captchaGenerator);
+    }
+
+    @Override
+    protected void beforeGenerateCaptcha(String businessKey, BusinessScenario scenario, ClientInfo clientInfo) {
+        // 前置处理逻辑
+    }
+
+    @Override
+    protected CaptchaVo afterGenerateCaptcha(CaptchaInfo captchaInfo) {
+        // 后置处理逻辑，构建返回值
+        return CaptchaVo.builder()
+                .captchaId(captchaInfo.getCaptchaId())
+                .expireTime(captchaInfo.getBusinessScenario().getCaptchaExpireTime())
+                .build();
+    }
+
+    @Override
+    protected boolean customValidateCaptcha(String captchaId, BusinessScenario scenario, String inputCode) {
+        // 自定义验证逻辑
+        return false;
+    }
 }
 ```
 
@@ -286,23 +387,8 @@ captcha:
     device:
       max-attempts: 5           # 设备最大尝试次数
       time-window: 3600         # 时间窗口(秒)
-    target:
-      max-attempts: 5           # 目标最大尝试次数
-      time-window: 3600         # 时间窗口(秒)
-    global:
-      max-attempts: 1000        # 全局最大尝试次数
-      time-window: 3600         # 时间窗口(秒)
     min-interval: 60            # 最小发送间隔(秒)
     max-attempts: 3             # 验证最大尝试次数
-  image:
-    code-length: 6              # 图片验证码长度
-    expire-time: 300            # 过期时间(秒)
-    distortion: true            # 是否启用扭曲
-    noise: true                 # 是否启用噪声
-  sms:
-    code-length: 6              # 短信验证码长度
-    expire-time: 300            # 过期时间(秒)
-    numeric-only: true          # 是否仅数字
 ```
 
 ## 8. 性能优化 (Performance Optimization)
@@ -334,12 +420,8 @@ captcha:
 ```java
 try {
     // 验证码业务逻辑
-} catch (RateLimitExceededException e) {
-    // 处理速率限制异常
-} catch (CaptchaExpiredException e) {
-    // 处理验证码过期异常
-} catch (ValidationFailedException e) {
-    // 处理验证失败异常
+} catch (RuntimeException e) {
+    // 处理速率限制等运行时异常
 }
 ```
 
@@ -386,5 +468,5 @@ try {
 
 ---
 
-*本文档版本: 1.0*
-*最后更新: 2024年*
+*本文档版本: 2.0*
+*最后更新: 2026年1月*
