@@ -2,9 +2,9 @@
 
 ## 1. 概述 (Overview)
 
-通知模块是一个通用的消息发送系统，支持多种通知方式如短信、邮件、推送等。该模块采用面向接口编程设计，易于扩展新的通知渠道。
+通知模块是一个通用的消息发送系统，支持多种通知方式如短信、邮件、微信等。该模块采用面向接口编程设计，易于扩展新的通知渠道。
 
-The notification module is a universal messaging system supporting various notification methods such as SMS, email, push notifications, etc. The module follows interface-based programming design for easy extension of new notification channels.
+The notification module is a universal messaging system supporting various notification methods such as SMS, email, WeChat, etc. The module follows interface-based programming design for easy extension of new notification channels.
 
 ## 2. 架构设计 (Architecture Design)
 
@@ -12,69 +12,84 @@ The notification module is a universal messaging system supporting various notif
 
 ```mermaid
 graph TB
-    A[NotificationServiceManager] --> B[INotificationService]
-    B --> C[SmsNotificationService]
-    B --> D[EmailNotificationService]
-    B --> E[PushNotificationService]
-    C --> F[External SMS Provider]
-    D --> G[SMTP Server]
-    E --> H[Push Service]
+    A[INotificationService] --> B[SmsNotificationService]
+    A --> C[EmailNotificationService]
+    A --> D[WechatNotificationService]
+    B --> E[ISmsProvider]
+    E --> F[AlibabaSmsProvider]
+    E --> G[TencentSmsProvider]
+    E --> H[SimulateSmsProvider]
 ```
 
 ### 2.2 核心组件说明 (Core Components)
 
 #### 2.2.1 服务层 (Service Layer)
 - **INotificationService**: 通用通知服务接口
-- **NotificationServiceManager**: 通知服务管理器，统一管理和调度各种通知服务
 - **SmsNotificationService**: 短信通知服务实现
-- **EmailNotificationService**: 邮件通知服务实现
+- **EmailNotificationService**: 邮件通知服务实现 (可扩展)
+- **WechatNotificationService**: 微信通知服务实现 (可扩展)
 
-#### 2.2.2 数据模型层 (Model Layer)
-- **NotificationResult**: 通知发送结果封装类
+#### 2.2.2 提供商层 (Provider Layer)
+- **ISmsProvider**: 短信服务提供商接口
+- **SimulateSmsProvider**: 模拟短信提供商实现
+- **AlibabaSmsProvider**: 阿里云短信提供商 (可扩展)
+- **TencentSmsProvider**: 腾讯云短信提供商 (可扩展)
+
+#### 2.2.3 枚举层 (Enum Layer)
+- **NotificationType**: 通知类型枚举
+- **NotificationTemplate**: 通知模板枚举
 
 ## 3. 类图设计 (Class Diagram)
 
 ```mermaid
 classDiagram
-    class NotificationServiceManager {
-        -notificationServices: Map~String,INotificationService~
-        +sendNotification(type, target, content, template)
-        +getService(type)
-        +supportsType(type)
-    }
-    
     class INotificationService {
         <<interface>>
-        +send(target, content, template)
-        +getType()
+        +send(target, template, args) : String
+        +send(target, template, Map args) : String
+        +getType() : NotificationType
     }
     
     class SmsNotificationService {
-        -captchaConfig: CaptchaConfig
-        +send(target, content, template)
+        -smsProvider: ISmsProvider
+        +send(target, template, args) : String
+        +send(target, template, Map args) : String
+        +getType() : NotificationType
+    }
+    
+    class ISmsProvider {
+        <<interface>>
+        +sendSms(target, content) : String
+    }
+    
+    class SimulateSmsProvider {
+        +sendSms(target, content) : String
+    }
+    
+    class NotificationType {
+        <<enumeration>>
+        +SMS
+        +EMAIL
+        +WECHAT
+        +getCode()
+        +getDescription()
+    }
+    
+    class NotificationTemplate {
+        <<enumeration>>
+        +CAPTCHA
+        +getCode()
+        +getName()
+        +getContent()
         +getType()
-        +buildSmsContent(captchaCode, scenario)
+        +getDescription()
     }
     
-    class EmailNotificationService {
-        +send(target, content, template)
-        +getType()
-        +buildEmailContent(captchaCode, scenario)
-    }
-    
-    class NotificationResult {
-        -success: boolean
-        -messageId: String
-        -errorMessage: String
-        +success(messageId)
-        +failure(errorMessage)
-    }
-    
-    NotificationServiceManager ..> INotificationService
     INotificationService <|.. SmsNotificationService
-    INotificationService <|.. EmailNotificationService
-    NotificationServiceManager ..> NotificationResult
-    INotificationService ..> NotificationResult
+    ISmsProvider <|.. SimulateSmsProvider
+    SmsNotificationService ..> ISmsProvider
+    SmsNotificationService ..> NotificationType
+    SmsNotificationService ..> NotificationTemplate
 ```
 
 ## 4. 时序图 (Sequence Diagrams)
@@ -84,39 +99,16 @@ classDiagram
 ```mermaid
 sequenceDiagram
     participant Client
-    participant NotificationServiceManager
     participant SmsNotificationService
+    participant ISmsProvider
     participant ExternalSmsProvider
     
-    Client->>NotificationServiceManager: sendNotification("SMS", target, content, template)
-    NotificationServiceManager->>SmsNotificationService: send(target, content, template)
-    
-    SmsNotificationService->>SmsNotificationService: simulateSmsSending()
-    SmsNotificationService->>ExternalSmsProvider: Call SMS API
-    ExternalSmsProvider-->>SmsNotificationService: Message ID
-    
-    SmsNotificationService-->>NotificationServiceManager: NotificationResult
-    NotificationServiceManager-->>Client: NotificationResult
-```
-
-### 4.2 发送邮件通知流程 (Send Email Notification Flow)
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant NotificationServiceManager
-    participant EmailNotificationService
-    participant SMTPServer
-    
-    Client->>NotificationServiceManager: sendNotification("EMAIL", target, content, template)
-    NotificationServiceManager->>EmailNotificationService: send(target, content, template)
-    
-    EmailNotificationService->>EmailNotificationService: simulateEmailSending()
-    EmailNotificationService->>SMTPServer: Send Email
-    SMTPServer-->>EmailNotificationService: Message ID
-    
-    EmailNotificationService-->>NotificationServiceManager: NotificationResult
-    NotificationServiceManager-->>Client: NotificationResult
+    Client->>SmsNotificationService: send(target, template, args)
+    SmsNotificationService->>ISmsProvider: sendSms(target, content)
+    ISmsProvider->>ExternalSmsProvider: Call SMS API
+    ExternalSmsProvider-->>ISmsProvider: Message ID
+    ISmsProvider-->>SmsNotificationService: Message ID
+    SmsNotificationService-->>Client: Message ID
 ```
 
 ## 5. 扩展性设计 (Extensibility Design)
@@ -127,29 +119,38 @@ sequenceDiagram
 
 ```java
 @Service
-public class PushNotificationService implements INotificationService {
+public class EmailNotificationService implements INotificationService {
     
     @Override
-    public NotificationResult send(String target, String content, String template) {
-        // 实现推送通知发送逻辑
+    public String send(String target, NotificationTemplate template, Map<String, String> args) {
+        // 实现邮件发送逻辑
     }
     
     @Override
-    public String getType() {
-        return "PUSH";
+    public String send(String target, NotificationTemplate template, Object... args) {
+        // 实现邮件发送逻辑
+    }
+    
+    @Override
+    public NotificationType getType() {
+        return NotificationType.EMAIL;
     }
 }
 ```
 
-### 5.2 配置支持 (Configuration Support)
+### 5.2 新增短信提供商 (Adding New SMS Provider)
 
-```yaml
-captcha:
-  sms:
-    provider: alibaba  # 可选值: alibaba, tencent, mock
-    template:
-      login: "LOGIN_CAPTCHA"
-      register: "REGISTER_CAPTCHA"
+要添加新的短信提供商，只需实现ISmsProvider接口：
+
+```java
+@Service
+public class AlibabaSmsProvider implements ISmsProvider {
+    
+    @Override
+    public String sendSms(String target, String content) {
+        // 实现阿里云短信发送逻辑
+    }
+}
 ```
 
 ## 6. 功能特性 (Features)
@@ -157,24 +158,28 @@ captcha:
 ### 6.1 核心功能 (Core Features)
 
 1. **统一接口**: 提供统一的INotificationService接口
-2. **多渠道支持**: 支持短信、邮件等多种通知方式
-3. **服务管理**: 通过NotificationServiceManager统一管理
-4. **结果封装**: 统一的NotificationResult封装发送结果
-5. **可配置**: 支持不同短信服务商的配置切换
+2. **多渠道支持**: 支持短信、邮件、微信等多种通知方式
+3. **模板管理**: 通过NotificationTemplate枚举管理通知模板
+4. **提供商抽象**: 通过ISmsProvider接口抽象短信提供商
+5. **参数化内容**: 支持动态模板参数替换
 
 ### 6.2 通知类型 (Notification Types)
 
 - **SMS**: 短信通知
 - **EMAIL**: 邮件通知
-- **PUSH**: 推送通知 (可扩展)
+- **WECHAT**: 微信通知
+
+### 6.3 模板类型 (Template Types)
+
+- **CAPTCHA**: 验证码模板
 
 ## 7. API 接口 (API Endpoints)
 
 ### 7.1 主要方法 (Main Methods)
 
-- **sendNotification**: 发送通知
-- **getService**: 获取特定类型的通知服务
-- **supportsType**: 检查是否支持指定类型的通知
+- **send(String, NotificationTemplate, Map)**: 使用Map参数发送通知
+- **send(String, NotificationTemplate, Object...)**: 使用可变参数发送通知
+- **getType()**: 获取通知类型
 
 ## 8. 性能优化 (Performance Optimization)
 
@@ -196,21 +201,14 @@ captcha:
 
 ### 9.2 异常处理策略 (Exception Handling Strategy)
 
-```java
-try {
-    // 发送通知
-    return NotificationResult.success(messageId);
-} catch (Exception e) {
-    return NotificationResult.failure(e.getMessage());
-}
-```
+通过提供商接口的实现来处理具体的发送异常。
 
 ## 10. 测试策略 (Testing Strategy)
 
 ### 10.1 单元测试 (Unit Testing)
 - 通知服务的独立测试
-- 通知结果封装的验证
-- 服务管理器的调度逻辑测试
+- 模板参数替换验证
+- 提供商接口的模拟测试
 
 ### 10.2 集成测试 (Integration Testing)
 - 完整的通知发送流程
@@ -242,5 +240,5 @@ try {
 
 ---
 
-*本文档版本: 1.0*
+*本文档版本: 2.0*
 *最后更新: 2026年1月*
