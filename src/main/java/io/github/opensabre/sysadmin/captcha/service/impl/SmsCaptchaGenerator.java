@@ -8,6 +8,7 @@ import io.github.opensabre.sysadmin.captcha.service.ICaptchaGenerator;
 import io.github.opensabre.sysadmin.captcha.enums.CaptchaType;
 import io.github.opensabre.sysadmin.notification.service.INotificationService;
 import io.github.opensabre.sysadmin.notification.service.NotificationServiceManager;
+import io.github.opensabre.sysadmin.notification.service.impl.SmsNotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -64,8 +65,7 @@ public class SmsCaptchaGenerator implements ICaptchaGenerator {
         }
 
         // Build SMS content
-        io.github.opensabre.sysadmin.notification.service.impl.SmsNotificationService smsNotificationService = 
-            (io.github.opensabre.sysadmin.notification.service.impl.SmsNotificationService) smsService;
+        SmsNotificationService smsNotificationService = (SmsNotificationService) smsService;
         String content = smsNotificationService.buildSmsContent(captchaCode, scenario.getCode());
 
         // Send SMS
