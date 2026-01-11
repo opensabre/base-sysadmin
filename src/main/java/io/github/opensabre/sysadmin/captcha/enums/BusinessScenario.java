@@ -13,19 +13,19 @@ public enum BusinessScenario {
      * Login with image captcha scenario
      * Used for graphical verification during user login process
      */
-    LOGIN_IMAGE("LOGIN_IMAGE", CaptchaType.IMAGE, "登录时图形验证码", 4, 300, 1, -1, 100),
+    LOGIN_IMAGE("LOGIN_IMAGE", CaptchaType.IMAGE, null, "登录时图形验证码", 4, 300, 1, -1, 100),
 
     /**
      * Login with SMS captcha scenario
      * Used for SMS verification during user login process
      */
-    LOGIN_SMS("LOGIN_SMS", CaptchaType.SMS, "登录时短信验证码", 6, 60, 2, -1, 100),
+    LOGIN_SMS("LOGIN_SMS", CaptchaType.SMS, "CAPTCHA", "登录时短信验证码", 6, 60, 2, -1, 100),
 
     /**
      * Registration with image captcha scenario
      * Used for graphical verification during user registration process
      */
-    REGISTER_IMAGE("REGISTER_IMAGE", CaptchaType.IMAGE, "注册时图形验证码", 4, 60, 3, 60, 50);
+    REGISTER_IMAGE("REGISTER_IMAGE", CaptchaType.IMAGE, null, "注册时图形验证码", 4, 60, 3, 60, 50);
 
     /**
      * Unique code identifying the business scenario
@@ -36,6 +36,11 @@ public enum BusinessScenario {
      * Type of captcha to be used for this scenario
      */
     private final CaptchaType type;
+
+    /**
+     * 消息模板code
+     */
+    private final String templateCode;
 
     /**
      * Human-readable description of the scenario
@@ -56,10 +61,12 @@ public enum BusinessScenario {
      * Maximum number of verification attempts allowed
      */
     private final int captchaAttempts;
+
     /**
      * 最小间隔时间
      */
     private final int minInterval;
+
     /**
      * 同一用户同一场景生成限制次数
      * count per hour
@@ -76,10 +83,12 @@ public enum BusinessScenario {
      * @param captchaExpireTime Expiration time in seconds
      * @param captchaAttempts   Maximum verification attempts
      */
-    BusinessScenario(String code, CaptchaType type, String description, int captchaLength, int captchaExpireTime,
+    BusinessScenario(String code, CaptchaType type, String templateCode, String description,
+                     int captchaLength, int captchaExpireTime,
                      int captchaAttempts, int minInterval, int maxLimitCount) {
         this.code = code;
         this.type = type;
+        this.templateCode = templateCode;
         this.description = description;
         this.captchaLength = captchaLength;
         this.captchaExpireTime = captchaExpireTime;
