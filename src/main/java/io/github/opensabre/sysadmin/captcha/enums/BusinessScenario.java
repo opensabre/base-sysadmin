@@ -25,8 +25,13 @@ public enum BusinessScenario {
      * Registration with image captcha scenario
      * Used for graphical verification during user registration process
      */
-    REGISTER_IMAGE("REGISTER_IMAGE", CaptchaType.IMAGE, null, "注册时图形验证码", 4, 60, 3, 60, 50);
+    REGISTER_IMAGE("REGISTER_IMAGE", CaptchaType.IMAGE, null, "注册时图形验证码", 4, 60, 3, 60, 50),
 
+    /**
+     * Login with Email captcha scenario
+     * Used for Email verification during user login process
+     */
+    LOGIN_EMAIL("LOGIN_EMAIL", CaptchaType.EMAIL, "CAPTCHA", "登录时邮箱验证码", 6, 300, 3, 60, 100);
     /**
      * Unique code identifying the business scenario
      */

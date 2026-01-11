@@ -28,6 +28,8 @@ public class CaptchaController {
     private ICaptchaService smsCaptchaService;
     @Resource
     private ICaptchaService imageCaptchaService;
+    @Resource
+    private ICaptchaService emailCaptchaService;
 
     @Operation(summary = "发送短信验证码", description = "发送一个随机的短信验证码")
     @PostMapping("/send/sms")
@@ -41,6 +43,21 @@ public class CaptchaController {
         // Generate Captcha
         CaptchaVo captchaVo = smsCaptchaService.generateCaptcha(phoneNo, scenario, clientInfo);
         log.info("Captcha SMS sent: businessKey={}, scenario={}, info={}", phoneNo, scenario, captchaVo);
+        return captchaVo;
+    }
+
+    @Operation(summary = "发送邮件验证码", description = "发送一个随机的邮件验证码")
+    @PostMapping("/send/email")
+    public CaptchaVo captchaEmail(@Parameter(name = "scenario", description = "业务场景", required = true) @RequestParam BusinessScenario scenario,
+                          @Parameter(name = "email", description = "邮箱", required = true) @RequestParam String email,
+                          @Parameter(name = "imageCaptchaId", description = "图形验证码 ID", required = true) @RequestParam String imageCaptchaId,
+                          @Parameter(name = "imageCaptchaCode", description = "用户输入的图形验证码", required = true) @RequestParam String imageCaptchaCode,
+                          HttpServletRequest request) {
+        // Get client IP and device info
+        ClientInfo clientInfo = ClientUtils.getClientInfo(request, email, scenario);
+        // Generate Captcha
+        CaptchaVo captchaVo = emailCaptchaService.generateCaptcha(email, scenario, clientInfo);
+        log.info("Captcha Email sent: businessKey={}, scenario={}, info={}", email, scenario, captchaVo);
         return captchaVo;
     }
 
