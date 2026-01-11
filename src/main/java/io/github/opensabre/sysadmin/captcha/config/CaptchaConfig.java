@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 public class CaptchaConfig {
     
     private Security security = new Security();
-    private Sms sms = new Sms();
 
     @Data
     public static class Security {
@@ -37,17 +36,5 @@ public class CaptchaConfig {
             this.maxAttempts = maxAttempts;
             this.timeWindow = timeWindow;
         }
-    }
-    
-    @Data
-    public static class Sms {
-        private String provider = "mock"; // 可选值: alibaba, tencent, mock
-        private Template template = new Template();
-    }
-    
-    @Data
-    public static class Template {
-        private String login = "LOGIN_CAPTCHA";
-        private String register = "REGISTER_CAPTCHA";
     }
 }

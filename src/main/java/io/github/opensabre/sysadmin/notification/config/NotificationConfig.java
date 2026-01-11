@@ -1,6 +1,5 @@
 package io.github.opensabre.sysadmin.notification.config;
 
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -8,6 +7,5 @@ import org.springframework.context.annotation.Configuration;
  * 扫描通知服务相关的组件
  */
 @Configuration
-@ComponentScan(basePackages = "io.github.opensabre.sysadmin.notification.service")
 public class NotificationConfig {
 }

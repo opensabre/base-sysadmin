@@ -8,6 +8,7 @@ import io.github.opensabre.sysadmin.captcha.utils.ClientUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +24,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/captcha")
 public class CaptchaController {
 
-    @Autowired
+    @Resource
     private ICaptchaService smsCaptchaService;
-    @Autowired
+    @Resource
     private ICaptchaService imageCaptchaService;
 
     @Operation(summary = "发送短信验证码", description = "发送一个随机的短信验证码")
