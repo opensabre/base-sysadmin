@@ -4,10 +4,10 @@ import io.github.opensabre.sysadmin.notification.enums.NotificationTemplate;
 import io.github.opensabre.sysadmin.notification.enums.NotificationType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -17,12 +17,11 @@ import java.util.stream.Collectors;
 @Component
 public class NotificationServiceManager {
 
-    private final Map<String, INotificationService> notificationServices;
+    private final Map<NotificationType, INotificationService> notificationServices;
 
     @Autowired
     public NotificationServiceManager(List<INotificationService> services) {
-        this.notificationServices = services.stream()
-                .collect(Collectors.toMap(service -> service.getType().getCode().toUpperCase(), service -> service));
+        this.notificationServices = services.stream().collect(Collectors.toMap(INotificationService::getType, service -> service));
     }
 
     /**
@@ -34,11 +33,9 @@ public class NotificationServiceManager {
      * @param args     模板参数
      * @return 发送结果
      */
-    public String sendNotification(String type, String target, NotificationTemplate template, Object... args) {
-        INotificationService service = notificationServices.get(type.toUpperCase());
-        if (service == null) {
-            throw new IllegalArgumentException("Unsupported notification type: " + type);
-        }
+    public String sendNotification(NotificationType type, String target, NotificationTemplate template, Object... args) {
+        INotificationService service = notificationServices.get(type);
+        Assert.notNull(service, "No notification service found for type: " + type);
         return service.send(target, template, args);
     }
 
@@ -51,11 +48,9 @@ public class NotificationServiceManager {
      * @param args     模板参数 (Map格式)
      * @return 发送结果
      */
-    public String sendNotification(String type, String target, NotificationTemplate template, Map<String, String> args) {
-        INotificationService service = notificationServices.get(type.toUpperCase());
-        if (service == null) {
-            throw new IllegalArgumentException("Unsupported notification type: " + type);
-        }
+    public String sendNotification(NotificationType type, String target, NotificationTemplate template, Map<String, String> args) {
+        INotificationService service = notificationServices.get(type);
+        Assert.notNull(service, "No notification service found for type: " + type);
         return service.send(target, template, args);
     }
 
@@ -65,8 +60,8 @@ public class NotificationServiceManager {
      * @param type 通知类型
      * @return 通知服务实例
      */
-    public INotificationService getService(String type) {
-        return notificationServices.get(type.toUpperCase());
+    public INotificationService get(NotificationType type) {
+        return notificationServices.get(type);
     }
 
     /**
@@ -75,7 +70,7 @@ public class NotificationServiceManager {
      * @param type 通知类型
      * @return 是否支持
      */
-    public boolean supportsType(String type) {
-        return notificationServices.containsKey(type.toUpperCase());
+    public boolean supportsType(NotificationType type) {
+        return notificationServices.containsKey(type);
     }
 }
