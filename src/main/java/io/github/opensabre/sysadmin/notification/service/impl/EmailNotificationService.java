@@ -17,7 +17,7 @@ public class EmailNotificationService implements INotificationService {
 
     @Override
     public String send(String target, NotificationTemplate template, Map<String, String> args) {
-        log.info("Sending Email to: {} with template: {} and args: {}", target, template, args);
+        log.info("Sending Email to: {} with template: {} and map args: {}", target, template, args);
         
         // 构建邮件内容
         String content = buildEmailContent(template, args);

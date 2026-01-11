@@ -6,6 +6,7 @@ import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.vo.CaptchaVo;
 import io.github.opensabre.sysadmin.notification.enums.NotificationTemplate;
 import io.github.opensabre.sysadmin.notification.service.INotificationService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,9 +23,9 @@ public class SmsCaptchaService extends CaptchaService {
     private final INotificationService notificationService;
 
     @Autowired
-    public SmsCaptchaService(SmsCaptchaGenerator captchaGenerator, INotificationService notificationService) {
+    public SmsCaptchaService(SmsCaptchaGenerator captchaGenerator, INotificationService smsNotificationService) {
         super(captchaGenerator);
-        this.notificationService = notificationService;
+        this.notificationService = smsNotificationService;
     }
 
     @Override
