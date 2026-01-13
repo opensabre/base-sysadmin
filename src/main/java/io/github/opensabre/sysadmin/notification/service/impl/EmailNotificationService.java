@@ -38,6 +38,17 @@ public class EmailNotificationService implements INotificationService {
     }
 
     @Override
+    public String send(String target, NotificationTemplate template) {
+        log.info("Sending Email to: {} with template: {} without args", target, template);
+        
+        // 构建邮件内容
+        String content = template.getContent();
+        
+        // 发送邮件
+        return sendEmail(target, content);
+    }
+
+    @Override
     public NotificationType getType() {
         return NotificationType.EMAIL;
     }
@@ -70,7 +81,7 @@ public class EmailNotificationService implements INotificationService {
     private String sendEmail(String target, String content) {
         // 这里应该是实际的邮件发送逻辑
         // 比如使用Spring Mail或第三方邮件服务
-        log.info("Sending email to {} with content: {}", target, content);
+        log.info("Sending Email to {} with content: {}", target, content);
         
         // 模拟发送成功，返回消息ID
         return "EMAIL_" + System.currentTimeMillis() + "_" + target.hashCode();

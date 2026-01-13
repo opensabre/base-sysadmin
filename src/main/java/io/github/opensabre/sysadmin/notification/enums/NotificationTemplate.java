@@ -11,7 +11,9 @@ public enum NotificationTemplate {
     /**
      * 短信验证码
      */
-    CAPTCHA("CAPTCHA", "验证码", NotificationType.SMS, "【通知】您的登录验证码为：%s，请在%d分钟内使用。如非本人操作，请忽略本信息。", "验证码类");
+    CAPTCHA("CAPTCHA", "验证码", NotificationType.SMS, "【通知】您的登录验证码为：%s，请在%d分钟内使用。如非本人操作，请忽略本信息。", "验证码类"),
+    ORDER("ORDER", "下单成功", NotificationType.SMS, "【通知】您订单已提交成功，谢谢。", "通知类"),
+    ORDER_EMAIL("ORDER_EMAIL", "下单成功", NotificationType.EMAIL, "【通知】您订单已提交成功，谢谢。", "通知类");
 
     /**
      * Unique code identifying the template

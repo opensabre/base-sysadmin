@@ -38,7 +38,6 @@ public class EmailCaptchaService extends CaptchaService {
     protected CaptchaVo afterGenerateCaptcha(CaptchaInfo captchaInfo) {
         // Send Email
         String messageId = notificationServiceManager.sendNotification(
-                NotificationType.EMAIL,
                 captchaInfo.getBusinessKey(),
                 NotificationTemplate.CAPTCHA,
                 captchaInfo.getCode(),

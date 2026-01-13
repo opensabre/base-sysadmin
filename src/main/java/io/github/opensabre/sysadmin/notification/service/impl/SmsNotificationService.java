@@ -38,6 +38,14 @@ public class SmsNotificationService implements INotificationService {
     }
 
     @Override
+    public String send(String target, NotificationTemplate template) {
+        log.info("Sending SMS to: {} template: {} without args", target, template);
+        // 模拟短信发送过程
+        String content = template.getContent();
+        return smsProvider.sendSms(target, content);
+    }
+
+    @Override
     public NotificationType getType() {
         return NotificationType.SMS;
     }

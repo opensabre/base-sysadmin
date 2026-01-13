@@ -27,31 +27,42 @@ public class NotificationServiceManager {
     /**
      * 发送通知
      *
-     * @param type     通知类型 (SMS, EMAIL, WECHAT等)
      * @param target   目标地址
      * @param template 通知模板
      * @param args     模板参数
      * @return 发送结果
      */
-    public String sendNotification(NotificationType type, String target, NotificationTemplate template, Object... args) {
-        INotificationService service = notificationServices.get(type);
-        Assert.notNull(service, "No notification service found for type: " + type);
+    public String sendNotification(String target, NotificationTemplate template, Object... args) {
+        INotificationService service = notificationServices.get(template.getType());
+        Assert.notNull(service, "No notification service found for type: " + template.getType());
         return service.send(target, template, args);
     }
 
     /**
      * 发送通知
      *
-     * @param type     通知类型 (SMS, EMAIL, WECHAT等)
      * @param target   目标地址
      * @param template 通知模板
      * @param args     模板参数 (Map格式)
      * @return 发送结果
      */
-    public String sendNotification(NotificationType type, String target, NotificationTemplate template, Map<String, String> args) {
-        INotificationService service = notificationServices.get(type);
-        Assert.notNull(service, "No notification service found for type: " + type);
+    public String sendNotification(String target, NotificationTemplate template, Map<String, String> args) {
+        INotificationService service = notificationServices.get(template.getType());
+        Assert.notNull(service, "No notification service found for type: " + template.getType());
         return service.send(target, template, args);
+    }
+
+    /**
+     * 发送通知（不带参数）
+     *
+     * @param target   目标地址
+     * @param template 通知模板
+     * @return 发送结果
+     */
+    public String sendNotification(String target, NotificationTemplate template) {
+        INotificationService service = notificationServices.get(template.getType());
+        Assert.notNull(service, "No notification service found for type: " + template.getType());
+        return service.send(target, template);
     }
 
     /**
