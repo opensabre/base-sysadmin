@@ -7,19 +7,18 @@ import io.github.opensabre.sysadmin.captcha.service.ICaptchaService;
 import io.github.opensabre.sysadmin.captcha.utils.ClientUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Slf4j
-@Schema(name = "验证码")
+@Tag(name = "验证码")
 @RestController
 @RequestMapping("/captcha")
 public class CaptchaController {
