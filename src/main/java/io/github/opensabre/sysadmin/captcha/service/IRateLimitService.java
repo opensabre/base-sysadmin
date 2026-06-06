@@ -1,12 +1,12 @@
 package io.github.opensabre.sysadmin.captcha.service;
 
+import io.github.opensabre.sysadmin.ratelimit.enums.RateLimitAlgorithmType;
+import io.github.opensabre.sysadmin.ratelimit.model.RateLimitConfig;
+import io.github.opensabre.sysadmin.ratelimit.model.RateLimitResult;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Security service for captcha rate limiting and other security controls
@@ -15,12 +15,13 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class IRateLimitService {
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private io.github.opensabre.sysadmin.ratelimit.service.IRateLimitService rateLimitService;
 
-    private static final String IP_RATE_LIMIT_PREFIX = "captcha:clientip:rate:";
-    private static final String DEVICE_RATE_LIMIT_PREFIX = "captcha:deviceid:rate:";
-    private static final String BUSINESS_RATE_LIMIT_PREFIX = "captcha:businessid:rate:";
+    private static final String IP_RATE_LIMIT_PREFIX = "captcha:clientip:rate";
+    private static final String DEVICE_RATE_LIMIT_PREFIX = "captcha:deviceid:rate";
+    private static final String BUSINESS_RATE_LIMIT_PREFIX = "captcha:businessid:rate";
+    private static final String BUSINESS_INTERVAL_PREFIX = "captcha:businessid:rate:interval";
 
     /**
      * Check if IP is allowed to send captcha
@@ -34,19 +35,9 @@ public class IRateLimitService {
         if (StringUtils.isBlank(ip)) {
             return false;
         }
-        String key = IP_RATE_LIMIT_PREFIX + ip;
-        String countStr = stringRedisTemplate.opsForValue().get(key);
-        int currentCount = countStr != null ? Integer.parseInt(countStr) : 0;
-
-        if (currentCount >= maxAttempts) {
-            log.warn("IP rate limit exceeded: {} (max: {}, current: {})", ip, maxAttempts, currentCount);
-            return false;
-        }
-        // Increment the count
-        stringRedisTemplate.opsForValue().increment(key);
-        stringRedisTemplate.expire(key, timeWindow, TimeUnit.SECONDS);
-
-        return true;
+        RateLimitResult result = checkLimit(IP_RATE_LIMIT_PREFIX, ip, maxAttempts, timeWindow);
+        logIfExceeded("IP", ip, result);
+        return result.isAllowed();
     }
 
     /**
@@ -61,19 +52,9 @@ public class IRateLimitService {
         if (StringUtils.isBlank(deviceId)) {
             return false;
         }
-        String key = DEVICE_RATE_LIMIT_PREFIX + deviceId;
-        String countStr = stringRedisTemplate.opsForValue().get(key);
-        int currentCount = countStr != null ? Integer.parseInt(countStr) : 0;
-
-        if (currentCount >= maxAttempts) {
-            log.warn("Device rate limit exceeded: {} (max: {}, current: {})", deviceId, maxAttempts, currentCount);
-            return false;
-        }
-        // Increment the count
-        stringRedisTemplate.opsForValue().increment(key);
-        stringRedisTemplate.expire(key, timeWindow, TimeUnit.SECONDS);
-
-        return true;
+        RateLimitResult result = checkLimit(DEVICE_RATE_LIMIT_PREFIX, deviceId, maxAttempts, timeWindow);
+        logIfExceeded("Device", deviceId, result);
+        return result.isAllowed();
     }
 
     /**
@@ -88,19 +69,9 @@ public class IRateLimitService {
         if (StringUtils.isBlank(businessId)) {
             return false;
         }
-        String key = BUSINESS_RATE_LIMIT_PREFIX + businessId;
-        String countStr = stringRedisTemplate.opsForValue().get(key);
-        int currentCount = countStr != null ? Integer.parseInt(countStr) : 0;
-
-        if (currentCount >= maxAttempts) {
-            log.warn("BusinessId rate limit exceeded: {} (max: {}, current: {})", businessId, maxAttempts, currentCount);
-            return false;
-        }
-        // Increment the count
-        stringRedisTemplate.opsForValue().increment(key);
-        stringRedisTemplate.expire(key, timeWindow, TimeUnit.SECONDS);
-
-        return true;
+        RateLimitResult result = checkLimit(BUSINESS_RATE_LIMIT_PREFIX, businessId, maxAttempts, timeWindow);
+        logIfExceeded("BusinessId", businessId, result);
+        return result.isAllowed();
     }
 
     /**
@@ -114,21 +85,29 @@ public class IRateLimitService {
         if (StringUtils.isBlank(businessId)) {
             return false;
         }
-
-        String key = BUSINESS_RATE_LIMIT_PREFIX + "interval:" + businessId;
-        String lastSendTimeStr = stringRedisTemplate.opsForValue().get(key);
-
-        if (lastSendTimeStr != null) {
-            long lastSendTime = Long.parseLong(lastSendTimeStr);
-            long currentTime = System.currentTimeMillis();
-
-            if (currentTime - lastSendTime < minInterval * 1000L) {
-                log.warn("Target interval not met: {} (min: {}s, elapsed: {}s)", businessId, minInterval, (currentTime - lastSendTime) / 1000L);
-                return false;
-            }
+        RateLimitResult result = checkLimit(BUSINESS_INTERVAL_PREFIX, businessId, 1, minInterval);
+        if (!result.isAllowed()) {
+            log.warn("Target interval not met: {} (min: {}s, current: {})", businessId, minInterval, result.getCurrentCount());
         }
-        // Update the last send time
-        stringRedisTemplate.opsForValue().set(key, String.valueOf(System.currentTimeMillis()), minInterval, TimeUnit.SECONDS);
-        return true;
+        return result.isAllowed();
+    }
+
+    private RateLimitResult checkLimit(String keyPrefix, String key, int maxAttempts, int timeWindow) {
+        RateLimitConfig config = RateLimitConfig.builder()
+                .keyPrefix(keyPrefix)
+                .key(key)
+                .algorithm(RateLimitAlgorithmType.COUNTER)
+                .maxCount(maxAttempts)
+                .period(timeWindow)
+                .enabled(true)
+                .build();
+        return rateLimitService.checkLimit(config);
+    }
+
+    private void logIfExceeded(String dimensionName, String dimensionValue, RateLimitResult result) {
+        if (!result.isAllowed()) {
+            log.warn("{} rate limit exceeded: {} (max: {}, current: {})",
+                    dimensionName, dimensionValue, result.getMaxCount(), result.getCurrentCount());
+        }
     }
 }

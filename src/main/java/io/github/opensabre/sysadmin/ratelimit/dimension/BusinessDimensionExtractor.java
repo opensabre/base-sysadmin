@@ -40,6 +40,6 @@ public class BusinessDimensionExtractor implements DimensionExtractor {
     public String extract(HttpServletRequest request) {
         // 该提取器由RateLimitAspect处理，不从请求中直接提取
         // 实际使用时，业务Key通过注解的key参数指定
-        return null;
+        return request.getHeader("X-Bid");
     }
 }

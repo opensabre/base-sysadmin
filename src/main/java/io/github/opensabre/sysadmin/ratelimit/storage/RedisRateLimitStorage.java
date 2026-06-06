@@ -2,10 +2,12 @@ package io.github.opensabre.sysadmin.ratelimit.storage;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,6 +29,14 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 public class RedisRateLimitStorage implements RateLimitStorage {
+
+    private static final DefaultRedisScript<Long> INCREMENT_AND_EXPIRE_SCRIPT = new DefaultRedisScript<>("""
+            local current = redis.call('incrby', KEYS[1], ARGV[1])
+            if current == tonumber(ARGV[1]) then
+                redis.call('expire', KEYS[1], ARGV[2])
+            end
+            return current
+            """, Long.class);
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -61,6 +71,29 @@ public class RedisRateLimitStorage implements RateLimitStorage {
             return stringRedisTemplate.opsForValue().increment(key, delta);
         } catch (Exception e) {
             log.error("Failed to increment key: {}", key, e);
+            throw new RuntimeException("Failed to increment rate limit count", e);
+        }
+    }
+
+    /**
+     * 原子增加计数，并在首次创建时设置过期时间
+     *
+     * @param key    存储键
+     * @param delta  增量
+     * @param expire 过期时间（秒）
+     * @return 增加后的值
+     */
+    @Override
+    public Long incrementAndExpire(String key, long delta, long expire) {
+        try {
+            return stringRedisTemplate.execute(
+                    INCREMENT_AND_EXPIRE_SCRIPT,
+                    Collections.singletonList(key),
+                    String.valueOf(delta),
+                    String.valueOf(expire)
+            );
+        } catch (Exception e) {
+            log.error("Failed to increment and expire key: {}", key, e);
             throw new RuntimeException("Failed to increment rate limit count", e);
         }
     }

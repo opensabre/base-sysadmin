@@ -35,6 +35,16 @@ public interface RateLimitStorage {
     Long increment(String key, long delta);
 
     /**
+     * 原子增加计数，并在首次创建时设置过期时间。
+     *
+     * @param key    存储键
+     * @param delta  增量
+     * @param expire 过期时间（秒）
+     * @return 增加后的值
+     */
+    Long incrementAndExpire(String key, long delta, long expire);
+
+    /**
      * 设置过期时间
      *
      * @param key    存储键

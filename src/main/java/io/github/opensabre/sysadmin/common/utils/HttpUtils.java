@@ -3,6 +3,7 @@ package io.github.opensabre.sysadmin.common.utils;
 import cn.hutool.core.util.HashUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -17,23 +18,14 @@ public class HttpUtils {
      * @return client IP address
      */
     public static String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
-            // Get the first IP if there are multiple in the X-Forwarded-For header
-            int index = xForwardedFor.indexOf(",");
-            if (index != -1) {
-                return xForwardedFor.substring(0, index).trim();
-            } else {
-                return xForwardedFor.trim();
-            }
-        }
+        String xForwardedIp = normalizeIp(StringUtils.substringBefore(request.getHeader("X-Forwarded-For"), ","));
+        String xRealIp = normalizeIp(request.getHeader("X-Real-IP"));
+        return StringUtils.defaultIfBlank(StringUtils.defaultIfBlank(xForwardedIp, xRealIp), request.getRemoteAddr());
+    }
 
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
-            return xRealIp.trim();
-        }
-
-        return request.getRemoteAddr();
+    private static String normalizeIp(String ip) {
+        String trimmedIp = StringUtils.trimToNull(ip);
+        return "unknown".equalsIgnoreCase(trimmedIp) ? null : trimmedIp;
     }
 
     /**
