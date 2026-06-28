@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import io.github.opensabre.sysadmin.common.utils.HttpUtils;
 import io.github.opensabre.sysadmin.ratelimit.algorithm.CounterAlgorithm;
 import io.github.opensabre.sysadmin.ratelimit.algorithm.RateLimitAlgorithm;
+import io.github.opensabre.sysadmin.ratelimit.algorithm.SlidingWindowAlgorithm;
 import io.github.opensabre.sysadmin.ratelimit.config.RateLimitProperties;
 import io.github.opensabre.sysadmin.ratelimit.dimension.DimensionExtractor;
 import io.github.opensabre.sysadmin.ratelimit.enums.RateLimitAlgorithmType;
@@ -36,6 +37,9 @@ public class RateLimitServiceImpl implements IRateLimitService {
 
     @Resource
     private CounterAlgorithm counterAlgorithm;
+
+    @Resource
+    private SlidingWindowAlgorithm slidingWindowAlgorithm;
 
     @Resource
     private RateLimitProperties properties;
@@ -113,7 +117,7 @@ public class RateLimitServiceImpl implements IRateLimitService {
         // 生成限次Key。配置错误不能被fail-open吞掉，否则限流会静默失效。
         String key = generateKey(config);
         try {
-            // 获取限次算法（目前只支持固定窗口）
+            // 获取限次算法
             RateLimitAlgorithm algorithm = getAlgorithm(config.getAlgorithm());
             // 执行限次检查
             return algorithm.checkLimit(key, config.getMaxCount(), config.getPeriod());
@@ -227,9 +231,11 @@ public class RateLimitServiceImpl implements IRateLimitService {
      * 获取限次算法
      */
     private RateLimitAlgorithm getAlgorithm(RateLimitAlgorithmType algorithmType) {
-        // Phase 1 只支持固定窗口算法
         if (algorithmType == RateLimitAlgorithmType.COUNTER) {
             return counterAlgorithm;
+        }
+        if (algorithmType == RateLimitAlgorithmType.SLIDING_WINDOW) {
+            return slidingWindowAlgorithm;
         }
         log.warn("Algorithm not implemented yet: {}, falling back to COUNTER", algorithmType);
         return counterAlgorithm;

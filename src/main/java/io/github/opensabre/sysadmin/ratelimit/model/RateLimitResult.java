@@ -100,4 +100,26 @@ public class RateLimitResult {
                 .errorMessage(errorMessage)
                 .build();
     }
+
+    /**
+     * 创建拒绝的结果
+     *
+     * @param key          限次Key
+     * @param currentCount 当前计数
+     * @param maxCount     最大次数
+     * @param errorMessage  错误消息
+     * @param resetTime     重置时间
+     * @return 限次检查结果
+     */
+    public static RateLimitResult denied(String key, long currentCount, long maxCount, String errorMessage, long resetTime) {
+        return RateLimitResult.builder()
+                .allowed(false)
+                .key(key)
+                .currentCount(currentCount)
+                .maxCount(maxCount)
+                .remaining(0)
+                .errorMessage(errorMessage)
+                .resetTime(resetTime)
+                .build();
+    }
 }

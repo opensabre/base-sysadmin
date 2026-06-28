@@ -1,5 +1,7 @@
 package io.github.opensabre.sysadmin.ratelimit.storage;
 
+import io.github.opensabre.sysadmin.ratelimit.model.RateLimitResult;
+
 /**
  * 限次存储接口
  * 定义限次数据的存储抽象
@@ -43,6 +45,16 @@ public interface RateLimitStorage {
      * @return 增加后的值
      */
     Long incrementAndExpire(String key, long delta, long expire);
+
+    /**
+     * 使用滑动窗口算法检查并记录一次请求。
+     *
+     * @param key      存储键
+     * @param maxCount 最大次数
+     * @param period   时间窗口（秒）
+     * @return 限次检查结果
+     */
+    RateLimitResult checkSlidingWindow(String key, int maxCount, int period);
 
     /**
      * 设置过期时间

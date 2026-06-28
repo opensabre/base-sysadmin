@@ -1,6 +1,7 @@
 package io.github.opensabre.sysadmin.ratelimit.storage;
 
 import jakarta.annotation.Resource;
+import io.github.opensabre.sysadmin.ratelimit.model.RateLimitResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -37,6 +40,19 @@ public class RedisRateLimitStorage implements RateLimitStorage {
             end
             return current
             """, Long.class);
+
+    private static final DefaultRedisScript<List> SLIDING_WINDOW_SCRIPT = new DefaultRedisScript<>("""
+            redis.call('zremrangebyscore', KEYS[1], 0, ARGV[2])
+            redis.call('zadd', KEYS[1], ARGV[1], ARGV[4])
+            local current = redis.call('zcard', KEYS[1])
+            redis.call('expire', KEYS[1], ARGV[3])
+            local oldest = redis.call('zrange', KEYS[1], 0, 0, 'withscores')
+            local reset = tonumber(ARGV[1]) + tonumber(ARGV[3]) * 1000
+            if oldest[2] ~= nil then
+                reset = tonumber(oldest[2]) + tonumber(ARGV[3]) * 1000
+            end
+            return {current, reset}
+            """, List.class);
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -95,6 +111,43 @@ public class RedisRateLimitStorage implements RateLimitStorage {
         } catch (Exception e) {
             log.error("Failed to increment and expire key: {}", key, e);
             throw new RuntimeException("Failed to increment rate limit count", e);
+        }
+    }
+
+    /**
+     * 使用 Redis ZSET 原子执行滑动窗口限次检查。
+     *
+     * @param key      存储键
+     * @param maxCount 最大次数
+     * @param period   时间窗口（秒）
+     * @return 限次检查结果
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public RateLimitResult checkSlidingWindow(String key, int maxCount, int period) {
+        long now = System.currentTimeMillis();
+        long windowStart = now - period * 1000L;
+        String member = now + ":" + UUID.randomUUID();
+        try {
+            List<Long> result = (List<Long>) stringRedisTemplate.execute(
+                    SLIDING_WINDOW_SCRIPT,
+                    Collections.singletonList(key),
+                    String.valueOf(now),
+                    String.valueOf(windowStart),
+                    String.valueOf(period),
+                    member
+            );
+            long currentCount = result == null || result.isEmpty() ? 0L : result.get(0);
+            long resetTime = result == null || result.size() < 2 ? now + period * 1000L : result.get(1);
+            if (currentCount > maxCount) {
+                log.warn("Sliding window rate limit exceeded: key={}, current={}, max={}", key, currentCount, maxCount);
+                return RateLimitResult.denied(key, currentCount, maxCount, String.format("当前已超过限次，请%d秒后再试", period), resetTime);
+            }
+            int remaining = Math.max(0, maxCount - (int) currentCount);
+            return RateLimitResult.allowed(key, currentCount, maxCount, remaining, resetTime);
+        } catch (Exception e) {
+            log.error("Failed to check sliding window rate limit for key: {}", key, e);
+            throw new RuntimeException("Failed to check sliding window rate limit", e);
         }
     }
 
