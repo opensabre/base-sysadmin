@@ -1,9 +1,9 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
-import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaGenerator;
 import io.github.opensabre.sysadmin.captcha.enums.CaptchaType;
 import lombok.extern.slf4j.Slf4j;
@@ -19,16 +19,16 @@ import java.time.LocalDateTime;
 public class EmailCaptchaGenerator implements ICaptchaGenerator {
 
     @Override
-    public CaptchaInfo generate(String businessKey, BusinessScenario scenario, ClientInfo clientInfo) {
+    public CaptchaInfo generate(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
         // Generate a random code for Email
         String code = RandomUtil.randomString(scenario.getCaptchaLength());
-        log.info("Generated Email captcha for businessKey: {}, scenario: {}", businessKey, scenario.getCode());
+        log.info("Generated Email captcha for businessKey: {}, scenario: {}", businessKey, scenario.getSceneCode());
 
         // Create CaptchaInfo with the generated code
         return CaptchaInfo.builder()
                 .businessKey(businessKey)
-                .captchaType(scenario.getType())
-                .businessScenario(scenario)
+                .captchaType(scenario.getCaptchaType())
+                .captchaScene(scenario)
                 .code(code)
                 .clientInfo(clientInfo)
                 .expireTime(LocalDateTime.now().plusSeconds(scenario.getCaptchaExpireTime()))

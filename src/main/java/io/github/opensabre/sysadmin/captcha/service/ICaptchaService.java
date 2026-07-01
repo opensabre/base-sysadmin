@@ -1,6 +1,7 @@
 package io.github.opensabre.sysadmin.captcha.service;
 
 import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.vo.CaptchaVo;
 
@@ -15,6 +16,8 @@ public interface ICaptchaService {
      */
     CaptchaVo generateCaptcha(String businessKey, BusinessScenario businessScenario, ClientInfo clientInfo);
 
+    CaptchaVo generateCaptcha(String businessKey, CaptchaScene businessScenario, ClientInfo clientInfo);
+
     /**
      * Validate a captcha
      *
@@ -24,4 +27,6 @@ public interface ICaptchaService {
      * @return true if valid, false otherwise
      */
     boolean validateCaptcha(String captchaId, BusinessScenario scenario, String inputCode);
+
+    boolean validateCaptcha(String captchaId, CaptchaScene scenario, String inputCode);
 }

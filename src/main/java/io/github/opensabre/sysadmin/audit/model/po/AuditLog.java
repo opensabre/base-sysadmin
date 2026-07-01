@@ -1,7 +1,7 @@
 package io.github.opensabre.sysadmin.audit.model.po;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.github.opensabre.boot.annotations.OperationType;
+import io.github.opensabre.governance.audit.annotations.OperationType;
 import io.github.opensabre.persistence.entity.po.BasePo;
 import lombok.*;
 

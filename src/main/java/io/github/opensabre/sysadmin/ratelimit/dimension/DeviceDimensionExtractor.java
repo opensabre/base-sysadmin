@@ -1,6 +1,6 @@
 package io.github.opensabre.sysadmin.ratelimit.dimension;
 
-import io.github.opensabre.sysadmin.common.utils.HttpUtils;
+import io.github.opensabre.webmvc.util.HttpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

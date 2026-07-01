@@ -1,10 +1,14 @@
 package io.github.opensabre.sysadmin.ratelimit.aspect;
 
-import io.github.opensabre.sysadmin.common.utils.HttpUtils;
+import io.github.opensabre.webmvc.util.HttpUtils;
 import io.github.opensabre.sysadmin.ratelimit.annotations.RateLimit;
+import io.github.opensabre.sysadmin.ratelimit.enums.RateLimitAlgorithmType;
+import io.github.opensabre.sysadmin.ratelimit.enums.RateLimitDimension;
 import io.github.opensabre.sysadmin.ratelimit.exception.RateLimitExceededException;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitConfig;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitResult;
+import io.github.opensabre.sysadmin.ratelimit.model.RateLimitScene;
+import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +25,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * 限次切面
@@ -45,6 +50,9 @@ public class RateLimitAspect {
 
     @Resource
     private IRateLimitService rateLimitService;
+
+    @Resource
+    private IRateLimitSceneService rateLimitSceneService;
 
     /**
      * el表达式 parser
@@ -88,20 +96,47 @@ public class RateLimitAspect {
      * @return 限次配置
      */
     private RateLimitConfig buildConfig(ProceedingJoinPoint joinPoint, RateLimit rateLimit) {
-        // 解析SpEL表达式获取业务Key
-        String businessKey = parseKey(joinPoint, rateLimit.key());
-        return RateLimitConfig.builder()
-                .key(businessKey)
-                .keyPrefix(rateLimit.keyPrefix())
-                .algorithm(rateLimit.algorithm())
-                .dimensions(Arrays.asList(rateLimit.dimensions()))
-                .maxCount(rateLimit.maxCount())
-                .period(rateLimit.period())
-                .enabled(rateLimit.enabled())
-                .message(rateLimit.message())
-                .showRemaining(rateLimit.showRemaining())
-                .customDimensionExtractor(rateLimit.customDimensionExtractor())
-                .build();
+        RateLimitConfig config = StringUtils.isBlank(rateLimit.sceneCode())
+                ? RateLimitConfig.builder().build()
+                : resolveSceneConfig(rateLimit.sceneCode());
+
+        config.setKey(parseKey(joinPoint, rateLimit.key()));
+        if (StringUtils.isNotBlank(rateLimit.keyPrefix())) {
+            config.setKeyPrefix(rateLimit.keyPrefix());
+        }
+        if (rateLimit.algorithm() != RateLimitAlgorithmType.COUNTER || config.getAlgorithm() == null) {
+            config.setAlgorithm(rateLimit.algorithm());
+        }
+        if (!(rateLimit.dimensions().length == 1 && rateLimit.dimensions()[0] == RateLimitDimension.IP)
+                || config.getDimensions() == null || config.getDimensions().isEmpty()) {
+            config.setDimensions(Arrays.asList(rateLimit.dimensions()));
+        }
+        if (rateLimit.maxCount() != 5 || config.getMaxCount() <= 0) {
+            config.setMaxCount(rateLimit.maxCount());
+        }
+        if (rateLimit.period() != 60 || config.getPeriod() <= 0) {
+            config.setPeriod(rateLimit.period());
+        }
+        boolean enabled = rateLimit.enabled();
+        if (StringUtils.isNotBlank(rateLimit.sceneCode())) {
+            enabled = enabled && config.isEnabled();
+        }
+        config.setEnabled(enabled);
+        config.setMessage(rateLimit.message());
+        config.setShowRemaining(rateLimit.showRemaining());
+        config.setCustomDimensionExtractor(rateLimit.customDimensionExtractor());
+        return config;
+    }
+
+    private RateLimitConfig resolveSceneConfig(String sceneCode) {
+        RateLimitScene scene = rateLimitSceneService.getByCode(sceneCode);
+        if (scene == null) {
+            throw new IllegalArgumentException("Rate limit scene not found: " + sceneCode);
+        }
+        if (!scene.isEnabled()) {
+            throw new IllegalStateException("Rate limit scene disabled: " + sceneCode);
+        }
+        return scene.toConfig();
     }
 
     /**

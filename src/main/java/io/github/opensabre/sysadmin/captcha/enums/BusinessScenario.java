@@ -101,4 +101,8 @@ public enum BusinessScenario {
         this.minInterval = minInterval;
         this.maxLimitCount = maxLimitCount;
     }
+
+    public io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene toScene() {
+        return io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene.from(this);
+    }
 }

@@ -83,6 +83,14 @@ public @interface RateLimit {
     String keyPrefix() default "";
 
     /**
+     * 动态场景代码
+     * 当配置了场景代码时，优先从后台场景表加载限次策略
+     *
+     * @return 场景代码
+     */
+    String sceneCode() default "";
+
+    /**
      * 是否启用限次
      * 默认启用
      *

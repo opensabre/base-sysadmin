@@ -1,8 +1,8 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
-import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.vo.CaptchaVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ public class ImageCaptchaService extends CaptchaService {
     }
 
     @Override
-    protected void beforeGenerateCaptcha(String businessKey, BusinessScenario scenario, ClientInfo clientInfo) {
+    protected void beforeGenerateCaptcha(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
         // nothing to do
     }
 
@@ -29,12 +29,12 @@ public class ImageCaptchaService extends CaptchaService {
         return CaptchaVo.builder()
                 .captchaId(captchaInfo.getCaptchaId())
                 .imageData(captchaInfo.getData()) // 图片数据
-                .expireTime(captchaInfo.getBusinessScenario().getCaptchaExpireTime())
+                .expireTime(captchaInfo.getCaptchaScene().getCaptchaExpireTime())
                 .build();
     }
 
     @Override
-    protected boolean customValidateCaptcha(String captchaId, BusinessScenario scenario, String inputCode) {
+    protected boolean customValidateCaptcha(String captchaId, CaptchaScene scenario, String inputCode) {
         // nothing to do
         return true;
     }

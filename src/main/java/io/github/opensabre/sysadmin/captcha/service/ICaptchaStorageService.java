@@ -2,6 +2,7 @@ package io.github.opensabre.sysadmin.captcha.service;
 
 import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 
 /**
  * Interface for captcha storage operations
@@ -14,7 +15,7 @@ public interface ICaptchaStorageService {
      * @param captchaInfo      Captcha entity to save
      * @param businessScenario Business Scenario
      */
-    void save(CaptchaInfo captchaInfo, BusinessScenario businessScenario);
+    void save(CaptchaInfo captchaInfo, CaptchaScene businessScenario);
 
     /**
      * Get captcha entity by sceneId and sendId
@@ -23,7 +24,7 @@ public interface ICaptchaStorageService {
      * @param businessScenario Business Scenario
      * @return Captcha entity or null if not found
      */
-    CaptchaInfo get(String captchaKey, BusinessScenario businessScenario);
+    CaptchaInfo get(String captchaKey, CaptchaScene businessScenario);
 
     /**
      * Delete captcha entity
@@ -31,7 +32,7 @@ public interface ICaptchaStorageService {
      * @param captchaKey       Captcha Key
      * @param businessScenario Business Scenario
      */
-    void delete(String captchaKey, BusinessScenario businessScenario);
+    void delete(String captchaKey, CaptchaScene businessScenario);
 
     /**
      * Update verification status
@@ -40,7 +41,7 @@ public interface ICaptchaStorageService {
      * @param businessScenario Business Scenario
      * @param verified         Verification status
      */
-    void updateVerified(String captchaKey, BusinessScenario businessScenario, boolean verified);
+    void updateVerified(String captchaKey, CaptchaScene businessScenario, boolean verified);
 
     /**
      * Increment attempts count
@@ -48,5 +49,5 @@ public interface ICaptchaStorageService {
      * @param captchaKey       Captcha Key
      * @param businessScenario Business Scenario
      */
-    void incrementAttempts(String captchaKey, BusinessScenario businessScenario);
+    void incrementAttempts(String captchaKey, CaptchaScene businessScenario);
 }

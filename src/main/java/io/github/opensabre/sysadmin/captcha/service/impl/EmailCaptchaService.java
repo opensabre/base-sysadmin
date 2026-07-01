@@ -1,8 +1,8 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
-import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.vo.CaptchaVo;
 import io.github.opensabre.sysadmin.notification.enums.NotificationTemplate;
 import io.github.opensabre.sysadmin.notification.enums.NotificationType;
@@ -27,7 +27,7 @@ public class EmailCaptchaService extends CaptchaService {
     }
 
     @Override
-    protected void beforeGenerateCaptcha(String businessKey, BusinessScenario scenario, ClientInfo clientInfo) {
+    protected void beforeGenerateCaptcha(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
         // 验证邮件验证码发送间隔
         if (!rateLimitService.isTargetIntervalAllowed(clientInfo.businessId(), captchaConfig.getSecurity().getMinInterval())) {
             throw new RuntimeException("Target interval not met");
@@ -41,19 +41,19 @@ public class EmailCaptchaService extends CaptchaService {
                 captchaInfo.getBusinessKey(),
                 NotificationTemplate.CAPTCHA,
                 captchaInfo.getCode(),
-                captchaInfo.getBusinessScenario().getCaptchaExpireTime() / 60
+                captchaInfo.getCaptchaScene().getCaptchaExpireTime() / 60
         );
         log.info("Email sent successfully, messageId: {}", messageId);
         // CaptchaVo
         return CaptchaVo.builder()
                 .captchaId(captchaInfo.getCaptchaId())
-                .expireTime(captchaInfo.getBusinessScenario().getCaptchaExpireTime())
+                .expireTime(captchaInfo.getCaptchaScene().getCaptchaExpireTime())
                 .build();
     }
 
     @Override
-    protected boolean customValidateCaptcha(String captchaId, BusinessScenario scenario, String inputCode) {
+    protected boolean customValidateCaptcha(String captchaId, CaptchaScene scenario, String inputCode) {
         // nothing to do
-        return false;
+        return true;
     }
 }

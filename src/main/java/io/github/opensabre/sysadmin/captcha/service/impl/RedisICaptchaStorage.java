@@ -2,9 +2,9 @@ package io.github.opensabre.sysadmin.captcha.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaStorageService;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -30,7 +30,7 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
     private static final String CAPTCHA_PREFIX = "captcha:";
 
     @Override
-    public void save(CaptchaInfo captchaInfo, BusinessScenario scenario) {
+    public void save(CaptchaInfo captchaInfo, CaptchaScene scenario) {
         String key = buildKey(captchaInfo.getCaptchaId(), scenario);
         long ttl = Duration.between(LocalDateTime.now(), captchaInfo.getExpireTime()
         ).getSeconds();
@@ -50,7 +50,7 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
     }
 
     @Override
-    public CaptchaInfo get(String captchaId, BusinessScenario scenario) {
+    public CaptchaInfo get(String captchaId, CaptchaScene scenario) {
         String key = buildKey(captchaId, scenario);
         String jsonStr = stringRedisTemplate.opsForValue().get(key);
 
@@ -66,14 +66,14 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
     }
 
     @Override
-    public void delete(String captchaId, BusinessScenario scenario) {
+    public void delete(String captchaId, CaptchaScene scenario) {
         String key = buildKey(captchaId, scenario);
         stringRedisTemplate.delete(key);
         log.debug("Deleted captcha: {}", key);
     }
 
     @Override
-    public void updateVerified(String captchaId, BusinessScenario scenario, boolean verified) {
+    public void updateVerified(String captchaId, CaptchaScene scenario, boolean verified) {
         CaptchaInfo captchaInfo = get(captchaId, scenario);
         if (captchaInfo != null) {
             captchaInfo.setVerified(verified);
@@ -85,7 +85,7 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
     }
 
     @Override
-    public void incrementAttempts(String captchaId, BusinessScenario scenario) {
+    public void incrementAttempts(String captchaId, CaptchaScene scenario) {
         String key = buildKey(captchaId, scenario);
         // Get the current captcha entity
         String jsonStr = stringRedisTemplate.opsForValue().get(key);
@@ -112,7 +112,7 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
      * @param scenario business scenario
      * @return key captcha:image:LOGIN_IMAGE:xxx
      */
-    private String buildKey(String captchaId, BusinessScenario scenario) {
-        return CAPTCHA_PREFIX + scenario.getType().getCode() + ":" + scenario.getCode() + ":" + captchaId;
+    private String buildKey(String captchaId, CaptchaScene scenario) {
+        return CAPTCHA_PREFIX + scenario.getCaptchaType().getCode() + ":" + scenario.getSceneCode() + ":" + captchaId;
     }
 }

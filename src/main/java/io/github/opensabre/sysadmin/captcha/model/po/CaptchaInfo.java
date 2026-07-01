@@ -2,7 +2,6 @@ package io.github.opensabre.sysadmin.captcha.model.po;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.enums.CaptchaType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,7 +37,7 @@ public class CaptchaInfo {
      * Business scenario this captcha belongs to
      * Defines the context where this captcha is used (login, register, etc.)
      */
-    private BusinessScenario businessScenario;
+    private CaptchaScene captchaScene;
 
     /**
      * The actual captcha code/string that needs to be verified

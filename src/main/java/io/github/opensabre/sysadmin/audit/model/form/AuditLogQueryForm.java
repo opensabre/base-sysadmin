@@ -1,6 +1,6 @@
 package io.github.opensabre.sysadmin.audit.model.form;
 
-import io.github.opensabre.boot.annotations.OperationType;
+import io.github.opensabre.governance.audit.annotations.OperationType;
 import io.github.opensabre.persistence.entity.form.BaseQueryForm;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

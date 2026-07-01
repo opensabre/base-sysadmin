@@ -1,7 +1,7 @@
 package io.github.opensabre.sysadmin.ratelimit.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
-import io.github.opensabre.sysadmin.common.utils.HttpUtils;
+import io.github.opensabre.webmvc.util.HttpUtils;
 import io.github.opensabre.sysadmin.ratelimit.algorithm.CounterAlgorithm;
 import io.github.opensabre.sysadmin.ratelimit.algorithm.RateLimitAlgorithm;
 import io.github.opensabre.sysadmin.ratelimit.algorithm.SlidingWindowAlgorithm;

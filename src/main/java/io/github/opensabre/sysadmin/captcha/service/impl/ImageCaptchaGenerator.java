@@ -1,7 +1,7 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
-import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaGenerator;
@@ -30,16 +30,16 @@ public class ImageCaptchaGenerator implements ICaptchaGenerator {
     private static final int HEIGHT = 40;
 
     @Override
-    public CaptchaInfo generate(String businessKey, BusinessScenario scenario, ClientInfo clientInfo) {
+    public CaptchaInfo generate(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
         // Generate a random code
         String code = RandomUtil.randomString(scenario.getCaptchaLength());
         // Generate the captcha image
         String imageData = generateCaptchaImage(code);
-        log.info("Generated image captcha for businessKey: {}, scenario: {}", businessKey, scenario.getCode());
+        log.info("Generated image captcha for businessKey: {}, scenario: {}", businessKey, scenario.getSceneCode());
         return CaptchaInfo.builder()
                 .businessKey(businessKey)
-                .businessScenario(scenario)
-                .captchaType(scenario.getType())
+                .captchaScene(scenario)
+                .captchaType(scenario.getCaptchaType())
                 .clientInfo(clientInfo)
                 .code(code)
                 .data("data:image/png;base64," + imageData)

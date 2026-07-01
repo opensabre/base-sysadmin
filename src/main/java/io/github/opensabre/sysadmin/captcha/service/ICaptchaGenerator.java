@@ -1,6 +1,7 @@
 package io.github.opensabre.sysadmin.captcha.service;
 
 import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
 
@@ -17,7 +18,7 @@ public interface ICaptchaGenerator {
      * @param clientInfo Additional clientInfo
      * @return CaptchaInfo containing captcha information
      */
-    CaptchaInfo generate(String businessKey, BusinessScenario scenario, ClientInfo clientInfo);
+    CaptchaInfo generate(String businessKey, CaptchaScene scenario, ClientInfo clientInfo);
 
     /**
      * Get the type of captcha this generator handles

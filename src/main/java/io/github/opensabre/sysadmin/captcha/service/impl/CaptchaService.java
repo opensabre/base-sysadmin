@@ -1,9 +1,10 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
-import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.config.CaptchaConfig;
+import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
+import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.vo.CaptchaVo;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaGenerator;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaService;
@@ -41,10 +42,15 @@ public abstract class CaptchaService implements ICaptchaService {
     /**
      * 验证码生成前
      */
-    protected abstract void beforeGenerateCaptcha(String businessKey, BusinessScenario scenario, ClientInfo clientInfo);
+    protected abstract void beforeGenerateCaptcha(String businessKey, CaptchaScene scenario, ClientInfo clientInfo);
 
     @Override
     public CaptchaVo generateCaptcha(String businessKey, BusinessScenario scenario, ClientInfo clientInfo) {
+        return generateCaptcha(businessKey, CaptchaScene.from(scenario), clientInfo);
+    }
+
+    @Override
+    public CaptchaVo generateCaptcha(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
         // Check rate limits for IP
         if (!rateLimitService.isIpAllowed(clientInfo.clientIp(),
                 captchaConfig.getSecurity().getIp().getMaxAttempts(),
@@ -82,8 +88,13 @@ public abstract class CaptchaService implements ICaptchaService {
 
     @Override
     public boolean validateCaptcha(String captchaId, BusinessScenario scenario, String inputCode) {
+        return validateCaptcha(captchaId, CaptchaScene.from(scenario), inputCode);
+    }
+
+    @Override
+    public boolean validateCaptcha(String captchaId, CaptchaScene scenario, String inputCode) {
         // 自定义校验
-        if (customValidateCaptcha(captchaId, scenario, inputCode)) {
+        if (!customValidateCaptcha(captchaId, scenario, inputCode)) {
             return false;
         }
         // Retrieve captcha from storage
@@ -129,5 +140,5 @@ public abstract class CaptchaService implements ICaptchaService {
      * @param inputCode 用户输入的验证码
      * @return 验证结果 true/ false
      */
-    protected abstract boolean customValidateCaptcha(String captchaId, BusinessScenario scenario, String inputCode);
+    protected abstract boolean customValidateCaptcha(String captchaId, CaptchaScene scenario, String inputCode);
 }
