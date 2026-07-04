@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
  * 业务维度提取器
  * 用于自定义业务维度的限次
  *
- * <p>该提取器不直接从请求中提取值，
- * 而是通过RateLimit注解的key参数（支持SpEL表达式）获取业务Key
+ * <p>业务系统可通过治理 starter 解析业务表达式后传入 key；
+ * sysadmin 侧也支持从请求头中读取业务标识。
  * </p>
  *
  * <p>使用场景：
@@ -30,16 +30,13 @@ public class BusinessDimensionExtractor implements DimensionExtractor {
 
     /**
      * 提取业务Key
-     * 该提取器仅在RateLimit注解中指定了key参数时使用
-     * 实际值由RateLimitAspect通过SpEL表达式解析后传入
+     * 默认从请求头 X-Bid 提取业务Key
      *
      * @param request HTTP 请求
-     * @return 业务Key，通常为null（由Aspect处理）
+     * @return 业务Key
      */
     @Override
     public String extract(HttpServletRequest request) {
-        // 该提取器由RateLimitAspect处理，不从请求中直接提取
-        // 实际使用时，业务Key通过注解的key参数指定
         return request.getHeader("X-Bid");
     }
 }
