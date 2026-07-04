@@ -68,3 +68,37 @@ CREATE TABLE IF NOT EXISTS `base_sys_ratelimit_scene` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_scene_code` (`scene_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='限次场景表';
+
+DROP TABLE IF EXISTS base_sys_dict_item;
+DROP TABLE IF EXISTS base_sys_dict_type;
+CREATE TABLE IF NOT EXISTS `base_sys_dict_type` (
+    `id` varchar(32) NOT NULL COMMENT '主键ID',
+    `name` varchar(128) NOT NULL COMMENT '字典名称',
+    `dict_code` varchar(64) NOT NULL COMMENT '字典编码',
+    `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态(1:启用;0:禁用)',
+    `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+    `created_by` varchar(100) NOT NULL COMMENT '创建人',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` varchar(100) NOT NULL COMMENT '更新人',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_dict_code` (`dict_code`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典类型表';
+
+CREATE TABLE IF NOT EXISTS `base_sys_dict_item` (
+    `id` varchar(32) NOT NULL COMMENT '主键ID',
+    `dict_code` varchar(64) NOT NULL COMMENT '字典编码',
+    `label` varchar(128) NOT NULL COMMENT '字典项标签',
+    `value` varchar(128) NOT NULL COMMENT '字典项值',
+    `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态(1:启用;0:禁用)',
+    `sort` int NOT NULL DEFAULT 1 COMMENT '排序',
+    `tag_type` varchar(16) NOT NULL DEFAULT 'N' COMMENT '标签类型(N/P/S/W/I/D)',
+    `created_by` varchar(100) NOT NULL COMMENT '创建人',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` varchar(100) NOT NULL COMMENT '更新人',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_dict_value` (`dict_code`, `value`),
+    KEY `idx_dict_status_sort` (`dict_code`, `status`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典项表';
