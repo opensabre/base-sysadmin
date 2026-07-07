@@ -24,24 +24,29 @@ public class SmsNotificationService implements INotificationService {
     @Override
     public String send(String target, NotificationTemplate template, Map<String, String> args) {
         log.info("Sending SMS to: {} template: {}, map arg: {},", target, template, args);
-        // 模拟短信发送过程
-        String content = String.format(template.getContent(), args);
-        return smsProvider.sendSms(target, content);
+        String content = template.getContent();
+        for (Map.Entry<String, String> entry : args.entrySet()) {
+            content = content.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return sendContent(target, template.getName(), content);
     }
 
     @Override
     public String send(String target, NotificationTemplate template, Object... args) {
         log.info("Sending SMS to: {} template: {}, args: {},", target, template, args);
-        // 模拟短信发送过程
         String content = String.format(template.getContent(), args);
-        return smsProvider.sendSms(target, content);
+        return sendContent(target, template.getName(), content);
     }
 
     @Override
     public String send(String target, NotificationTemplate template) {
         log.info("Sending SMS to: {} template: {} without args", target, template);
-        // 模拟短信发送过程
-        String content = template.getContent();
+        return sendContent(target, template.getName(), template.getContent());
+    }
+
+    @Override
+    public String sendContent(String target, String title, String content) {
+        log.info("Sending SMS to: {} title: {}", target, title);
         return smsProvider.sendSms(target, content);
     }
 

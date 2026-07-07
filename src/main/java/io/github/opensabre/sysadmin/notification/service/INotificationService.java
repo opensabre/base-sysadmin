@@ -40,6 +40,16 @@ public interface INotificationService {
     String send(String target, NotificationTemplate template);
 
     /**
+     * 发送已渲染的通知内容。
+     *
+     * @param target 目标地址
+     * @param title  标题，可为空
+     * @param content 已渲染内容
+     * @return 消息ID
+     */
+    String sendContent(String target, String title, String content);
+
+    /**
      * 获取通知类型
      *
      * @return 通知类型

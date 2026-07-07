@@ -19,33 +19,29 @@ public class EmailNotificationService implements INotificationService {
     public String send(String target, NotificationTemplate template, Map<String, String> args) {
         log.info("Sending Email to: {} with template: {} and map args: {}", target, template, args);
         
-        // 构建邮件内容
         String content = buildEmailContent(template, args);
-        
-        // 发送邮件
-        return sendEmail(target, content);
+        return sendContent(target, template.getName(), content);
     }
 
     @Override
     public String send(String target, NotificationTemplate template, Object... args) {
         log.info("Sending Email to: {} with template: {} and args: {}", target, template, args);
         
-        // 构建邮件内容
         String content = String.format(template.getContent(), args);
-        
-        // 发送邮件
-        return sendEmail(target, content);
+        return sendContent(target, template.getName(), content);
     }
 
     @Override
     public String send(String target, NotificationTemplate template) {
         log.info("Sending Email to: {} with template: {} without args", target, template);
         
-        // 构建邮件内容
-        String content = template.getContent();
-        
-        // 发送邮件
-        return sendEmail(target, content);
+        return sendContent(target, template.getName(), template.getContent());
+    }
+
+    @Override
+    public String sendContent(String target, String title, String content) {
+        log.info("Sending Email to {} with title: {} content: {}", target, title, content);
+        return "EMAIL_" + System.currentTimeMillis() + "_" + target.hashCode();
     }
 
     @Override
@@ -71,19 +67,4 @@ public class EmailNotificationService implements INotificationService {
         return content;
     }
 
-    /**
-     * 发送邮件
-     *
-     * @param target  目标邮箱
-     * @param content 邮件内容
-     * @return 发送结果（消息ID）
-     */
-    private String sendEmail(String target, String content) {
-        // 这里应该是实际的邮件发送逻辑
-        // 比如使用Spring Mail或第三方邮件服务
-        log.info("Sending Email to {} with content: {}", target, content);
-        
-        // 模拟发送成功，返回消息ID
-        return "EMAIL_" + System.currentTimeMillis() + "_" + target.hashCode();
-    }
 }

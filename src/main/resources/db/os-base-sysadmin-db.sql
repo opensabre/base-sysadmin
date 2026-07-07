@@ -11,6 +11,18 @@ VALUES
 ('LOGIN_SMS', 'LOGIN_SMS', '登录时短信验证码', 'SMS', 'CAPTCHA', '登录时短信验证码', 6, 60, 2, 60, 100, 1, 'system', 'system'),
 ('LOGIN_EMAIL', 'LOGIN_EMAIL', '登录时邮箱验证码', 'EMAIL', 'CAPTCHA', '登录时邮箱验证码', 6, 300, 3, 60, 100, 1, 'system', 'system');
 
+INSERT INTO `base_sys_notification_scene` (`id`, `scene_code`, `scene_name`, `description`, `enabled`, `created_by`, `updated_by`)
+VALUES
+('NOTIFY_SCENE_LOGIN_CAPTCHA', 'LOGIN_CAPTCHA', '登录验证码', '登录时发送验证码通知', 1, 'system', 'system'),
+('NOTIFY_SCENE_ORDER_CREATED', 'ORDER_CREATED', '订单创建', '订单创建后发送通知', 1, 'system', 'system');
+
+INSERT INTO `base_sys_notification_template` (`id`, `scene_code`, `channel`, `template_name`, `title`, `content`, `param_schema`, `sort`, `enabled`, `created_by`, `updated_by`)
+VALUES
+('NOTIFY_TPL_LOGIN_SMS', 'LOGIN_CAPTCHA', 'SMS', '登录验证码短信', NULL, '【通知】您的登录验证码为：{code}，请在{minutes}分钟内使用。如非本人操作，请忽略本信息。', 'code:验证码; minutes:有效分钟数', 1, 1, 'system', 'system'),
+('NOTIFY_TPL_LOGIN_EMAIL', 'LOGIN_CAPTCHA', 'EMAIL', '登录验证码邮件', '登录验证码', '您的登录验证码为：{code}，请在{minutes}分钟内使用。', 'code:验证码; minutes:有效分钟数', 2, 1, 'system', 'system'),
+('NOTIFY_TPL_ORDER_SMS', 'ORDER_CREATED', 'SMS', '订单创建短信', NULL, '【通知】您的订单{orderNo}已提交成功。', 'orderNo:订单号', 1, 1, 'system', 'system'),
+('NOTIFY_TPL_ORDER_EMAIL', 'ORDER_CREATED', 'EMAIL', '订单创建邮件', '订单提交成功', '您的订单{orderNo}已提交成功，谢谢。', 'orderNo:订单号', 2, 1, 'system', 'system');
+
 INSERT INTO `base_sys_dict_type` (`id`, `name`, `dict_code`, `status`, `remark`, `created_by`, `updated_by`)
 VALUES
 ('DICT_GENDER', '性别', 'gender', 1, '用户性别', 'system', 'system'),
