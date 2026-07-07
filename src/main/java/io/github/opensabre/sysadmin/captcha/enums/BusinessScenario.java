@@ -13,25 +13,25 @@ public enum BusinessScenario {
      * Login with image captcha scenario
      * Used for graphical verification during user login process
      */
-    LOGIN_IMAGE("LOGIN_IMAGE", CaptchaType.IMAGE, null, "登录时图形验证码", 4, 300, 1, -1, 100),
+    LOGIN_IMAGE("LOGIN_IMAGE", CaptchaType.IMAGE, null, null, "登录时图形验证码", 4, 300, 1, -1, 100),
 
     /**
      * Registration with image captcha scenario
      * Used for graphical verification during user registration process
      */
-    REGISTER_IMAGE("REGISTER_IMAGE", CaptchaType.IMAGE, null, "注册时图形验证码", 4, 60, 3, 60, 50),
+    REGISTER_IMAGE("REGISTER_IMAGE", CaptchaType.IMAGE, null, null, "注册时图形验证码", 4, 60, 3, 60, 50),
 
     /**
      * Login with SMS captcha scenario
      * Used for SMS verification during user login process
      */
-    LOGIN_SMS("LOGIN_SMS", CaptchaType.SMS, "CAPTCHA", "登录时短信验证码", 6, 60, 2, -1, 100),
+    LOGIN_SMS("LOGIN_SMS", CaptchaType.SMS, "CAPTCHA", "NOTIFY_TPL_LOGIN_SMS", "登录时短信验证码", 6, 60, 2, -1, 100),
 
     /**
      * Login with Email captcha scenario
      * Used for Email verification during user login process
      */
-    LOGIN_EMAIL("LOGIN_EMAIL", CaptchaType.EMAIL, "CAPTCHA", "登录时邮箱验证码", 6, 300, 3, 60, 100);
+    LOGIN_EMAIL("LOGIN_EMAIL", CaptchaType.EMAIL, "CAPTCHA", "NOTIFY_TPL_LOGIN_EMAIL", "登录时邮箱验证码", 6, 300, 3, 60, 100);
     /**
      * Unique code identifying the business scenario
      */
@@ -46,6 +46,11 @@ public enum BusinessScenario {
      * 消息模板code
      */
     private final String templateCode;
+
+    /**
+     * 通知中心模板ID
+     */
+    private final String notificationTemplateId;
 
     /**
      * Human-readable description of the scenario
@@ -88,12 +93,13 @@ public enum BusinessScenario {
      * @param captchaExpireTime Expiration time in seconds
      * @param captchaAttempts   Maximum verification attempts
      */
-    BusinessScenario(String code, CaptchaType type, String templateCode, String description,
+    BusinessScenario(String code, CaptchaType type, String templateCode, String notificationTemplateId, String description,
                      int captchaLength, int captchaExpireTime,
                      int captchaAttempts, int minInterval, int maxLimitCount) {
         this.code = code;
         this.type = type;
         this.templateCode = templateCode;
+        this.notificationTemplateId = notificationTemplateId;
         this.description = description;
         this.captchaLength = captchaLength;
         this.captchaExpireTime = captchaExpireTime;

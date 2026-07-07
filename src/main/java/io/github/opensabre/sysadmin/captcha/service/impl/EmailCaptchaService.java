@@ -4,9 +4,7 @@ import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.vo.CaptchaVo;
-import io.github.opensabre.sysadmin.notification.enums.NotificationTemplate;
-import io.github.opensabre.sysadmin.notification.enums.NotificationType;
-import io.github.opensabre.sysadmin.notification.service.NotificationServiceManager;
+import io.github.opensabre.sysadmin.captcha.service.CaptchaNotificationSender;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,12 +16,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailCaptchaService extends CaptchaService {
 
-    private final NotificationServiceManager notificationServiceManager;
+    private final CaptchaNotificationSender captchaNotificationSender;
 
     @Autowired
-    public EmailCaptchaService(EmailCaptchaGenerator captchaGenerator, NotificationServiceManager notificationServiceManager) {
+    public EmailCaptchaService(EmailCaptchaGenerator captchaGenerator, CaptchaNotificationSender captchaNotificationSender) {
         super(captchaGenerator);
-        this.notificationServiceManager = notificationServiceManager;
+        this.captchaNotificationSender = captchaNotificationSender;
     }
 
     @Override
@@ -36,15 +34,11 @@ public class EmailCaptchaService extends CaptchaService {
 
     @Override
     protected CaptchaVo afterGenerateCaptcha(CaptchaInfo captchaInfo) {
-        // Send Email
-        String messageId = notificationServiceManager.sendNotification(
+        String messageId = captchaNotificationSender.sendCaptcha(
+                captchaInfo.getCaptchaScene(),
                 captchaInfo.getBusinessKey(),
-                NotificationTemplate.CAPTCHA,
-                captchaInfo.getCode(),
-                captchaInfo.getCaptchaScene().getCaptchaExpireTime() / 60
-        );
+                captchaInfo.getCode());
         log.info("Email sent successfully, messageId: {}", messageId);
-        // CaptchaVo
         return CaptchaVo.builder()
                 .captchaId(captchaInfo.getCaptchaId())
                 .expireTime(captchaInfo.getCaptchaScene().getCaptchaExpireTime())

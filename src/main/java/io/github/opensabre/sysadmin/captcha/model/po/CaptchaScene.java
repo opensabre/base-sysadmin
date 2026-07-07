@@ -29,6 +29,8 @@ public class CaptchaScene extends BasePo {
 
     private String templateCode;
 
+    private String notificationTemplateId;
+
     private String description;
 
     private int captchaLength;
@@ -52,6 +54,7 @@ public class CaptchaScene extends BasePo {
                 .sceneName(scenario.getDescription())
                 .captchaType(scenario.getType())
                 .templateCode(scenario.getTemplateCode())
+                .notificationTemplateId(scenario.getNotificationTemplateId())
                 .description(scenario.getDescription())
                 .captchaLength(scenario.getCaptchaLength())
                 .captchaExpireTime(scenario.getCaptchaExpireTime())

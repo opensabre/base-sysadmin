@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS `base_sys_captcha_scene` (
     `scene_name` varchar(128) NOT NULL COMMENT '场景名称',
     `captcha_type` varchar(32) NOT NULL COMMENT '验证码类型',
     `template_code` varchar(64) DEFAULT NULL COMMENT '消息模板编码',
+    `notification_template_id` varchar(64) DEFAULT NULL COMMENT '通知模板ID',
     `description` varchar(255) DEFAULT NULL COMMENT '描述',
     `captcha_length` int NOT NULL DEFAULT 4 COMMENT '验证码长度',
     `captcha_expire_time` int NOT NULL DEFAULT 300 COMMENT '过期时间(秒)',

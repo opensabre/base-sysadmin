@@ -4,14 +4,10 @@ import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.model.vo.CaptchaVo;
-import io.github.opensabre.sysadmin.notification.enums.NotificationTemplate;
-import io.github.opensabre.sysadmin.notification.service.INotificationService;
-import jakarta.annotation.Resource;
+import io.github.opensabre.sysadmin.captcha.service.CaptchaNotificationSender;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 /**
  * 短信验证码服务
@@ -20,12 +16,12 @@ import java.util.Map;
 @Service
 public class SmsCaptchaService extends CaptchaService {
 
-    private final INotificationService notificationService;
+    private final CaptchaNotificationSender captchaNotificationSender;
 
     @Autowired
-    public SmsCaptchaService(SmsCaptchaGenerator captchaGenerator, INotificationService smsNotificationService) {
+    public SmsCaptchaService(SmsCaptchaGenerator captchaGenerator, CaptchaNotificationSender captchaNotificationSender) {
         super(captchaGenerator);
-        this.notificationService = smsNotificationService;
+        this.captchaNotificationSender = captchaNotificationSender;
     }
 
     @Override
@@ -38,11 +34,11 @@ public class SmsCaptchaService extends CaptchaService {
 
     @Override
     protected CaptchaVo afterGenerateCaptcha(CaptchaInfo captchaInfo) {
-        // Send Sms
-        NotificationTemplate template = NotificationTemplate.valueOf(captchaInfo.getCaptchaScene().getTemplateCode());
-        String messageId = notificationService.send(captchaInfo.getBusinessKey(), template, captchaInfo.getCode(), 5);
+        String messageId = captchaNotificationSender.sendCaptcha(
+                captchaInfo.getCaptchaScene(),
+                captchaInfo.getBusinessKey(),
+                captchaInfo.getCode());
         log.info("Sms sent successfully, messageId: {}", messageId);
-        // CaptchaVo
         return CaptchaVo.builder()
                 .captchaId(captchaInfo.getCaptchaId())
                 .expireTime(captchaInfo.getCaptchaScene().getCaptchaExpireTime())
