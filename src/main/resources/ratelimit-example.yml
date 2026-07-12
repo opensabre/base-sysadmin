@@ -1,0 +1,56 @@
+# 限次模块配置示例
+# 将此配置添加到 application.yml 中
+
+ratelimit:
+  # 是否启用限次功能
+  enabled: true
+
+  # Redis Key 前缀
+  key-prefix: "ratelimit:"
+
+  # 默认限次配置
+  default:
+    # 默认算法类型：COUNTER（固定窗口计数器）
+    algorithm: "COUNTER"
+    # 默认最大次数
+    max-count: 5
+    # 默认时间窗口（秒）
+    period: 60
+    # 默认维度列表
+    dimensions:
+      - "IP"
+
+  # 全局限次配置
+  global:
+    # IP 限次配置
+    ip:
+      # IP限次最大次数
+      max-count: 10
+      # IP限次时间窗口（秒）
+      period: 3600
+
+    # 设备限次配置
+    device:
+      # 设备限次最大次数
+      max-count: 10
+      # 设备限次时间窗口（秒）
+      period: 3600
+
+    # 用户限次配置
+    user:
+      # 用户限次最大次数
+      max-count: 20
+      # 用户限次时间窗口（秒）
+      period: 3600
+
+# 示例端点级配置（自定义实现）
+# ratelimit:
+#   endpoints:
+#     /api/user/login:
+#       max-count: 5
+#       period: 60
+#       dimensions: [IP, DEVICE]
+#     /api/sms/send:
+#       max-count: 3
+#       period: 3600
+#       dimensions: [BUSINESS]
