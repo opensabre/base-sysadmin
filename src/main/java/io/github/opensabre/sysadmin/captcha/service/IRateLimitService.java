@@ -1,8 +1,9 @@
 package io.github.opensabre.sysadmin.captcha.service;
 
-import io.github.opensabre.sysadmin.ratelimit.enums.RateLimitAlgorithmType;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitConfig;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitResult;
+import io.github.opensabre.sysadmin.ratelimit.model.RateLimitScene;
+import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -17,91 +18,52 @@ public class IRateLimitService {
 
     @Resource
     private io.github.opensabre.sysadmin.ratelimit.service.IRateLimitService rateLimitService;
+    @Resource
+    private IRateLimitSceneService rateLimitSceneService;
 
-    private static final String IP_RATE_LIMIT_PREFIX = "captcha:clientip:rate";
-    private static final String DEVICE_RATE_LIMIT_PREFIX = "captcha:deviceid:rate";
-    private static final String BUSINESS_RATE_LIMIT_PREFIX = "captcha:businessid:rate";
-    private static final String BUSINESS_INTERVAL_PREFIX = "captcha:businessid:rate:interval";
+    /** 验证码全局 IP 限次场景。 */
+    public static final String CAPTCHA_IP_SCENE = "CAPTCHA_IP";
+    /** 验证码全局设备限次场景。 */
+    public static final String CAPTCHA_DEVICE_SCENE = "CAPTCHA_DEVICE";
 
     /**
-     * Check if IP is allowed to send captcha
+     * 返回验证码业务标识对应的限次场景编码。
      *
-     * @param ip          IP address
-     * @param maxAttempts Maximum attempts allowed
-     * @param timeWindow  Time window in seconds
-     * @return true if allowed, false otherwise
+     * @param captchaSceneCode 验证码场景编码
+     * @return 限次场景编码
      */
-    public boolean isIpAllowed(String ip, int maxAttempts, int timeWindow) {
-        if (StringUtils.isBlank(ip)) {
-            return false;
-        }
-        RateLimitResult result = checkLimit(IP_RATE_LIMIT_PREFIX, ip, maxAttempts, timeWindow);
-        logIfExceeded("IP", ip, result);
-        return result.isAllowed();
+    public static String captchaBusinessSceneCode(String captchaSceneCode) {
+        return "CAPTCHA_" + captchaSceneCode;
     }
 
     /**
-     * Check if device is allowed to send captcha
+     * 按数据库维护的限次场景执行检查。
      *
-     * @param deviceId    Device information
-     * @param maxAttempts Maximum attempts allowed
-     * @param timeWindow  Time window in seconds
-     * @return true if allowed, false otherwise
+     * @param sceneCode 限次场景编码
+     * @param key 当前维度对应的唯一值
+     * @return 是否允许继续生成验证码
      */
-    public boolean isDeviceAllowed(String deviceId, int maxAttempts, int timeWindow) {
-        if (StringUtils.isBlank(deviceId)) {
+    public boolean isAllowed(String sceneCode, String key) {
+        if (StringUtils.isBlank(key)) {
             return false;
         }
-        RateLimitResult result = checkLimit(DEVICE_RATE_LIMIT_PREFIX, deviceId, maxAttempts, timeWindow);
-        logIfExceeded("Device", deviceId, result);
-        return result.isAllowed();
-    }
-
-    /**
-     * Check if businessId (phone/email  && scenario) is allowed to receive captcha
-     *
-     * @param businessId  businessId (phone number, email, etc.) && scenario
-     * @param maxAttempts Maximum attempts allowed
-     * @param timeWindow  Time window in seconds
-     * @return true if allowed, false otherwise
-     */
-    public boolean isBusinessAllowed(String businessId, int maxAttempts, int timeWindow) {
-        if (StringUtils.isBlank(businessId)) {
-            return false;
+        RateLimitScene scene = rateLimitSceneService.getByCode(sceneCode);
+        if (scene == null) {
+            throw new IllegalStateException("Captcha rate limit scene not found: " + sceneCode);
         }
-        RateLimitResult result = checkLimit(BUSINESS_RATE_LIMIT_PREFIX, businessId, maxAttempts, timeWindow);
-        logIfExceeded("BusinessId", businessId, result);
-        return result.isAllowed();
-    }
-
-    /**
-     * Check if target has recently received a captcha (to prevent spam)
-     *
-     * @param businessId  Target (phone number, email, etc.)
-     * @param minInterval Minimum interval in seconds
-     * @return true if allowed, false if too soon
-     */
-    public boolean isTargetIntervalAllowed(String businessId, int minInterval) {
-        if (StringUtils.isBlank(businessId)) {
-            return false;
+        if (!scene.isEnabled()) {
+            return true;
         }
-        RateLimitResult result = checkLimit(BUSINESS_INTERVAL_PREFIX, businessId, 1, minInterval);
-        if (!result.isAllowed()) {
-            log.warn("Target interval not met: {} (min: {}s, current: {})", businessId, minInterval, result.getCurrentCount());
-        }
-        return result.isAllowed();
-    }
-
-    private RateLimitResult checkLimit(String keyPrefix, String key, int maxAttempts, int timeWindow) {
-        RateLimitConfig config = RateLimitConfig.builder()
-                .keyPrefix(keyPrefix)
+        RateLimitResult result = rateLimitService.checkLimit(RateLimitConfig.builder()
+                .keyPrefix(scene.getKeyPrefix())
                 .key(key)
-                .algorithm(RateLimitAlgorithmType.COUNTER)
-                .maxCount(maxAttempts)
-                .period(timeWindow)
+                .algorithm(scene.getAlgorithm())
+                .maxCount(scene.getMaxCount())
+                .period(scene.getPeriod())
                 .enabled(true)
-                .build();
-        return rateLimitService.checkLimit(config);
+                .build());
+        logIfExceeded(sceneCode, key, result);
+        return result.isAllowed();
     }
 
     private void logIfExceeded(String dimensionName, String dimensionValue, RateLimitResult result) {

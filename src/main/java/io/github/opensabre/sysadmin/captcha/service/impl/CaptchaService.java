@@ -1,6 +1,5 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
-import io.github.opensabre.sysadmin.captcha.config.CaptchaConfig;
 import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
@@ -32,8 +31,6 @@ public abstract class CaptchaService implements ICaptchaService {
     @Autowired
     protected IRateLimitService rateLimitService;
 
-    @Autowired
-    protected CaptchaConfig captchaConfig;
 
     public CaptchaService(ICaptchaGenerator captchaGenerator) {
         this.captchaGenerator = captchaGenerator;
@@ -51,22 +48,15 @@ public abstract class CaptchaService implements ICaptchaService {
 
     @Override
     public CaptchaVo generateCaptcha(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
-        // Check rate limits for IP
-        if (!rateLimitService.isIpAllowed(clientInfo.clientIp(),
-                captchaConfig.getSecurity().getIp().getMaxAttempts(),
-                captchaConfig.getSecurity().getIp().getTimeWindow())) {
+        // IP、设备和业务标识都由限次场景表维护，便于运行时调整。
+        if (!rateLimitService.isAllowed(IRateLimitService.CAPTCHA_IP_SCENE, clientInfo.clientIp())) {
             throw new RuntimeException("IP rate limit exceeded");
         }
-        // Check rate limits for deviceId
-        if (!rateLimitService.isDeviceAllowed(clientInfo.deviceId(),
-                captchaConfig.getSecurity().getDevice().getMaxAttempts(),
-                captchaConfig.getSecurity().getDevice().getTimeWindow())) {
+        if (!rateLimitService.isAllowed(IRateLimitService.CAPTCHA_DEVICE_SCENE, clientInfo.deviceId())) {
             throw new RuntimeException("Device rate limit exceeded");
         }
-        // Check rate limits for businessId
-        if (!rateLimitService.isBusinessAllowed(clientInfo.businessId(),
-                scenario.getMaxLimitCount(),
-                captchaConfig.getSecurity().getDevice().getTimeWindow())) {
+        if (!rateLimitService.isAllowed(IRateLimitService.captchaBusinessSceneCode(scenario.getSceneCode()),
+                clientInfo.businessId())) {
             throw new RuntimeException("BusinessId rate limit exceeded");
         }
         // 验证码生成前置逻辑

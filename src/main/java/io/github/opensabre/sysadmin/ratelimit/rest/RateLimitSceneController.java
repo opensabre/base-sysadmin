@@ -1,5 +1,7 @@
 package io.github.opensabre.sysadmin.ratelimit.rest;
 
+import io.github.opensabre.governance.audit.annotations.Audit;
+import io.github.opensabre.governance.audit.annotations.OperationType;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitScene;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,12 +47,14 @@ public class RateLimitSceneController {
 
     @PostMapping
     @Operation(summary = "创建限次场景")
+    @Audit(operationType = OperationType.CREATE, description = "创建限次场景", module = "RATE_LIMIT_SCENE", response = true, key = "#scene.sceneCode")
     public boolean create(@Valid @RequestBody RateLimitScene scene) {
         return rateLimitSceneService.saveScene(scene);
     }
 
     @PutMapping("/{sceneCode}")
     @Operation(summary = "更新限次场景")
+    @Audit(operationType = OperationType.UPDATE, description = "更新限次场景", module = "RATE_LIMIT_SCENE", response = true, key = "#sceneCode")
     public boolean update(@PathVariable String sceneCode, @Valid @RequestBody RateLimitScene scene) {
         scene.setSceneCode(sceneCode);
         return rateLimitSceneService.updateScene(scene);
@@ -58,6 +62,7 @@ public class RateLimitSceneController {
 
     @DeleteMapping("/{sceneCode}")
     @Operation(summary = "删除限次场景")
+    @Audit(operationType = OperationType.DELETE, description = "删除限次场景", module = "RATE_LIMIT_SCENE", response = true, key = "#sceneCode")
     public boolean delete(@PathVariable String sceneCode) {
         return rateLimitSceneService.deleteScene(sceneCode);
     }
