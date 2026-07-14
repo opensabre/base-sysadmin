@@ -19,6 +19,12 @@ spring:
       maximum-pool-size: 20
 # opensabre framework配置
 opensabre:
+  gateway:
+    config:
+      # 仅供读取网关路由配置；配置中心凭证不暴露给浏览器。
+      server-url: http://${REGISTER_HOST:localhost}:${REGISTER_PORT:8848}
+      data-id: base-gateway.yml
+      group: DEFAULT_GROUP
   sensitive:
     log:
       enabled: false # 日志脱敏开关，默认关闭
