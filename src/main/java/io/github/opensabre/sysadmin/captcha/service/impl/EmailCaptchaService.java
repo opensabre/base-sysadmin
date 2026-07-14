@@ -26,10 +26,7 @@ public class EmailCaptchaService extends CaptchaService {
 
     @Override
     protected void beforeGenerateCaptcha(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
-        // 验证邮件验证码发送间隔
-        if (!rateLimitService.isTargetIntervalAllowed(clientInfo.businessId(), captchaConfig.getSecurity().getMinInterval())) {
-            throw new RuntimeException("Target interval not met");
-        }
+        // 发送间隔由验证码业务维度的限次场景统一控制。
     }
 
     @Override
