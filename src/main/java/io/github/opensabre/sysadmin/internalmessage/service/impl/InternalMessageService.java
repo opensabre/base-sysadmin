@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /** 默认站内信服务实现。 */
@@ -121,6 +122,10 @@ public class InternalMessageService extends ServiceImpl<InternalMessageMapper, I
                 .and(wrapper -> wrapper.isNull(InternalMessage::getExpireTime)
                         .or().gt(InternalMessage::getExpireTime, LocalDateTime.now()))
                 .orderByDesc(InternalMessage::getPublishTime));
+        Map<String, Boolean> readByMessageId = recipientPage.getRecords().stream()
+                .collect(Collectors.toMap(InternalMessageRecipient::getMessageId,
+                        recipient -> recipient.getReadTime() != null, (left, right) -> left));
+        records.forEach(message -> message.setRead(readByMessageId.getOrDefault(message.getId(), false)));
         Page<InternalMessage> page = new Page<>(pageNum, pageSize, recipientPage.getTotal());
         page.setRecords(records);
         return page;

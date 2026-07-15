@@ -1,5 +1,6 @@
 package io.github.opensabre.sysadmin.internalmessage.model.po;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.github.opensabre.persistence.entity.po.BasePo;
 import io.github.opensabre.sysadmin.internalmessage.enums.InternalMessageKind;
@@ -26,4 +27,8 @@ public class InternalMessage extends BasePo {
     private InternalMessageStatus status;
     private LocalDateTime publishTime;
     private LocalDateTime expireTime;
+
+    /** 当前收件人阅读状态，仅用于收件箱响应，不持久化到消息主体表。 */
+    @TableField(exist = false)
+    private Boolean read;
 }
