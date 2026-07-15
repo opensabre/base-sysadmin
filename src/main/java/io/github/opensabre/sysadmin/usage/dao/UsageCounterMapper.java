@@ -1,8 +1,14 @@
 package io.github.opensabre.sysadmin.usage.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import io.github.opensabre.sysadmin.usage.model.form.UsageBatchSummaryQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageRankingQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageSummaryQuery;
 import io.github.opensabre.sysadmin.usage.model.form.UsageTrendQuery;
 import io.github.opensabre.sysadmin.usage.model.po.UsageCounterMinute;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageObjectSummaryVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageRankingVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageSummaryVo;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageTrendVo;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -41,4 +47,13 @@ public interface UsageCounterMapper extends BaseMapper<UsageCounterMinute> {
 
     @SelectProvider(type = UsageCounterSqlProvider.class, method = "trend")
     List<UsageTrendVo> trend(@Param("query") UsageTrendQuery query);
+
+    @SelectProvider(type = UsageCounterSqlProvider.class, method = "summary")
+    UsageSummaryVo summary(@Param("query") UsageSummaryQuery query);
+
+    @SelectProvider(type = UsageCounterSqlProvider.class, method = "summaries")
+    List<UsageObjectSummaryVo> summaries(@Param("query") UsageBatchSummaryQuery query);
+
+    @SelectProvider(type = UsageCounterSqlProvider.class, method = "ranking")
+    List<UsageRankingVo> ranking(@Param("query") UsageRankingQuery query);
 }

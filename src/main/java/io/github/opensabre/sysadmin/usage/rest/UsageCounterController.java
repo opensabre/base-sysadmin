@@ -4,9 +4,15 @@ import io.github.opensabre.sysadmin.usage.enums.UsageEvent;
 import io.github.opensabre.sysadmin.usage.enums.UsageGranularity;
 import io.github.opensabre.sysadmin.usage.enums.UsageObjectType;
 import io.github.opensabre.sysadmin.usage.model.form.UsageTrendQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageBatchSummaryQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageRankingQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageSummaryQuery;
 import io.github.opensabre.sysadmin.usage.model.UsageCounterRequest;
 import io.github.opensabre.sysadmin.usage.model.form.UsageCounterEventForm;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageTrendVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageObjectSummaryVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageRankingVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageSummaryVo;
 import io.github.opensabre.sysadmin.usage.service.IUsageCounterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -69,5 +75,54 @@ public class UsageCounterController {
         query.setObjectId(objectId);
         query.setUsageEvent(usageEvent);
         return usageCounterService.trend(query);
+    }
+
+    /**
+     * 查询一个对象或筛选范围内的使用量汇总。
+     */
+    @GetMapping("/summary")
+    @Operation(summary = "查询使用量汇总")
+    public UsageSummaryVo summary(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            @RequestParam(required = false) UsageObjectType objectType,
+            @RequestParam(required = false) String objectId,
+            @RequestParam(required = false) UsageEvent usageEvent) {
+        UsageSummaryQuery query = new UsageSummaryQuery();
+        query.setFrom(from);
+        query.setTo(to);
+        query.setObjectType(objectType);
+        query.setObjectId(objectId);
+        query.setUsageEvent(usageEvent);
+        return usageCounterService.summary(query);
+    }
+
+    /**
+     * 批量查询对象使用量汇总，供配置列表展示使用。
+     */
+    @PostMapping("/summaries")
+    @Operation(summary = "批量查询对象使用量汇总")
+    public List<UsageObjectSummaryVo> summaries(@Valid @RequestBody UsageBatchSummaryQuery query) {
+        return usageCounterService.summaries(query);
+    }
+
+    /**
+     * 查询使用次数最多的对象。
+     */
+    @GetMapping("/ranking")
+    @Operation(summary = "查询使用量排行榜")
+    public List<UsageRankingVo> ranking(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            @RequestParam(required = false) UsageObjectType objectType,
+            @RequestParam(required = false) UsageEvent usageEvent,
+            @RequestParam(defaultValue = "20") Integer limit) {
+        UsageRankingQuery query = new UsageRankingQuery();
+        query.setFrom(from);
+        query.setTo(to);
+        query.setObjectType(objectType);
+        query.setUsageEvent(usageEvent);
+        query.setLimit(limit);
+        return usageCounterService.ranking(query);
     }
 }

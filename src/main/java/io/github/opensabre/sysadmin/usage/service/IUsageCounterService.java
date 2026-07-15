@@ -5,6 +5,12 @@ import io.github.opensabre.sysadmin.usage.enums.UsageObjectType;
 import io.github.opensabre.sysadmin.usage.enums.UsageOutcome;
 import io.github.opensabre.sysadmin.usage.model.UsageCounterRequest;
 import io.github.opensabre.sysadmin.usage.model.form.UsageTrendQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageBatchSummaryQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageRankingQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageSummaryQuery;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageObjectSummaryVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageRankingVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageSummaryVo;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageTrendVo;
 
 import java.util.List;
@@ -26,4 +32,10 @@ public interface IUsageCounterService {
     }
 
     List<UsageTrendVo> trend(UsageTrendQuery query);
+
+    UsageSummaryVo summary(UsageSummaryQuery query);
+
+    List<UsageObjectSummaryVo> summaries(UsageBatchSummaryQuery query);
+
+    List<UsageRankingVo> ranking(UsageRankingQuery query);
 }
