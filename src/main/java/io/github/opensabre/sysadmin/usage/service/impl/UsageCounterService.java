@@ -4,6 +4,12 @@ import io.github.opensabre.sysadmin.usage.dao.UsageCounterMapper;
 import io.github.opensabre.sysadmin.usage.event.UsageCounterEvent;
 import io.github.opensabre.sysadmin.usage.model.UsageCounterRequest;
 import io.github.opensabre.sysadmin.usage.model.form.UsageTrendQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageBatchSummaryQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageRankingQuery;
+import io.github.opensabre.sysadmin.usage.model.form.UsageSummaryQuery;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageObjectSummaryVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageRankingVo;
+import io.github.opensabre.sysadmin.usage.model.vo.UsageSummaryVo;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageTrendVo;
 import io.github.opensabre.sysadmin.usage.service.IUsageCounterService;
 import lombok.extern.slf4j.Slf4j;
@@ -61,15 +67,50 @@ public class UsageCounterService implements IUsageCounterService {
         return trend;
     }
 
+    @Override
+    public UsageSummaryVo summary(UsageSummaryQuery query) {
+        validateRange(query == null ? null : query.getFrom(), query == null ? null : query.getTo());
+        UsageSummaryVo summary = usageCounterMapper.summary(query);
+        if (summary == null) {
+            summary = new UsageSummaryVo();
+            summary.setAttemptCount(0L);
+            summary.setSuccessCount(0L);
+            summary.setFailureCount(0L);
+        }
+        fillSuccessRate(summary);
+        return summary;
+    }
+
+    @Override
+    public List<UsageObjectSummaryVo> summaries(UsageBatchSummaryQuery query) {
+        validateRange(query == null ? null : query.getFrom(), query == null ? null : query.getTo());
+        if (query.getObjectType() == null || query.getObjectIds() == null || query.getObjectIds().isEmpty()
+                || query.getObjectIds().size() > 100 || query.getObjectIds().stream().anyMatch(StringUtils::isBlank)) {
+            throw new IllegalArgumentException("objectType and 1 to 100 non-blank objectIds are required");
+        }
+        List<UsageObjectSummaryVo> summaries = usageCounterMapper.summaries(query);
+        summaries.forEach(this::fillSuccessRate);
+        return summaries;
+    }
+
+    @Override
+    public List<UsageRankingVo> ranking(UsageRankingQuery query) {
+        validateRange(query == null ? null : query.getFrom(), query == null ? null : query.getTo());
+        if (query.getLimit() == null || query.getLimit() < 1 || query.getLimit() > 100) {
+            throw new IllegalArgumentException("limit must be between 1 and 100");
+        }
+        List<UsageRankingVo> rankings = usageCounterMapper.ranking(query);
+        rankings.forEach(this::fillSuccessRate);
+        return rankings;
+    }
+
     private boolean isValid(UsageCounterRequest request) {
         return request != null && request.getObjectType() != null && StringUtils.isNotBlank(request.getObjectId())
                 && request.getUsageEvent() != null && request.getOutcome() != null;
     }
 
     private void validateQuery(UsageTrendQuery query) {
-        if (query == null || query.getFrom() == null || query.getTo() == null || !query.getFrom().isBefore(query.getTo())) {
-            throw new IllegalArgumentException("from must be before to");
-        }
+        validateRange(query == null ? null : query.getFrom(), query == null ? null : query.getTo());
         if (query.getGranularity() == null) {
             throw new IllegalArgumentException("granularity must not be null");
         }
@@ -85,14 +126,23 @@ public class UsageCounterService implements IUsageCounterService {
         }
     }
 
-    private void fillSuccessRate(UsageTrendVo trend) {
-        if (trend.getAttemptCount() == null || trend.getAttemptCount() == 0) {
-            trend.setSuccessRate(null);
+    private void validateRange(LocalDateTime from, LocalDateTime to) {
+        if (from == null || to == null || !from.isBefore(to)) {
+            throw new IllegalArgumentException("from must be before to");
+        }
+        if (ChronoUnit.DAYS.between(from, to) > 3L * 366) {
+            throw new IllegalArgumentException("query range exceeds three years");
+        }
+    }
+
+    private void fillSuccessRate(UsageSummaryVo summary) {
+        if (summary.getAttemptCount() == null || summary.getAttemptCount() == 0) {
+            summary.setSuccessRate(null);
             return;
         }
-        long successCount = trend.getSuccessCount() == null ? 0 : trend.getSuccessCount();
-        trend.setSuccessRate(BigDecimal.valueOf(successCount)
-                .divide(BigDecimal.valueOf(trend.getAttemptCount()), SUCCESS_RATE_SCALE, RoundingMode.HALF_UP));
+        long successCount = summary.getSuccessCount() == null ? 0 : summary.getSuccessCount();
+        summary.setSuccessRate(BigDecimal.valueOf(successCount)
+                .divide(BigDecimal.valueOf(summary.getAttemptCount()), SUCCESS_RATE_SCALE, RoundingMode.HALF_UP));
     }
 
 }

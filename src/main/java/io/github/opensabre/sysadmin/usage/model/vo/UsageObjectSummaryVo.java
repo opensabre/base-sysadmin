@@ -4,10 +4,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 一个统计时间桶内的对象使用量。
+ * 指定业务对象的使用量汇总数据。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class UsageTrendVo extends UsageSummaryVo {
-    private String bucketStart;
+public class UsageObjectSummaryVo extends UsageSummaryVo {
+    private String objectId;
 }
