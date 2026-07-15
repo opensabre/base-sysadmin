@@ -10,6 +10,10 @@ import io.github.opensabre.sysadmin.ratelimit.model.form.RateLimitCheckForm;
 import io.github.opensabre.sysadmin.ratelimit.model.vo.RateLimitCheckVo;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitService;
+import io.github.opensabre.sysadmin.usage.enums.UsageEvent;
+import io.github.opensabre.sysadmin.usage.enums.UsageObjectType;
+import io.github.opensabre.sysadmin.usage.enums.UsageOutcome;
+import io.github.opensabre.sysadmin.usage.service.IUsageCounterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -33,12 +37,32 @@ public class RateLimitController {
     @Resource
     private IRateLimitSceneService rateLimitSceneService;
 
+    @Resource
+    private IUsageCounterService usageCounterService;
+
     @PostMapping("/check")
     @Operation(summary = "检查限次", description = "供 opensabre-framework starter 远程调用")
     public RateLimitCheckVo check(@RequestBody RateLimitCheckForm form) {
         RateLimitConfig config = buildConfig(form);
-        RateLimitResult result = rateLimitService.checkLimit(config);
-        return RateLimitCheckVo.from(result);
+        boolean hasScene = StringUtils.isNotBlank(form.getSceneCode());
+        if (hasScene) {
+            usageCounterService.record(UsageObjectType.RATE_LIMIT_SCENE, form.getSceneCode(),
+                    UsageEvent.RATE_LIMIT_CHECK, UsageOutcome.ATTEMPT);
+        }
+        try {
+            RateLimitResult result = rateLimitService.checkLimit(config);
+            if (hasScene) {
+                usageCounterService.record(UsageObjectType.RATE_LIMIT_SCENE, form.getSceneCode(), UsageEvent.RATE_LIMIT_CHECK,
+                        result.isAllowed() ? UsageOutcome.SUCCESS : UsageOutcome.FAILURE);
+            }
+            return RateLimitCheckVo.from(result);
+        } catch (RuntimeException exception) {
+            if (hasScene) {
+                usageCounterService.record(UsageObjectType.RATE_LIMIT_SCENE, form.getSceneCode(),
+                        UsageEvent.RATE_LIMIT_CHECK, UsageOutcome.FAILURE);
+            }
+            throw exception;
+        }
     }
 
     private RateLimitConfig buildConfig(RateLimitCheckForm form) {
