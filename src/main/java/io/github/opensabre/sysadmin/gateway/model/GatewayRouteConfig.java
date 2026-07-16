@@ -10,6 +10,8 @@ public class GatewayRouteConfig {
 
     private String version;
     private List<GatewayRoute> routes = new ArrayList<>();
+    /** 应用于所有显式路由的 Spring Cloud Gateway default-filters。 */
+    private List<GatewayRouteDefinition> defaultFilters = new ArrayList<>();
 
     public String getVersion() {
         return version;
@@ -26,4 +28,7 @@ public class GatewayRouteConfig {
     public void setRoutes(List<GatewayRoute> routes) {
         this.routes = routes;
     }
+
+    public List<GatewayRouteDefinition> getDefaultFilters() { return defaultFilters; }
+    public void setDefaultFilters(List<GatewayRouteDefinition> defaultFilters) { this.defaultFilters = defaultFilters; }
 }

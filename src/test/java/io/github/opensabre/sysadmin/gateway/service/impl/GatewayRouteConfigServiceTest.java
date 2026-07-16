@@ -75,6 +75,48 @@ class GatewayRouteConfigServiceTest {
                 .withMessageContaining("不支持的过滤器");
     }
 
+    @Test
+    void shouldReplaceOnlyGatewayDefaultFiltersNode() {
+        String yaml = """
+                spring:
+                  cloud:
+                    gateway:
+                      routes:
+                        - id: base-organization
+                          uri: lb://base-organization
+                      default-filters:
+                        - AddResponseHeader=X-Old, old
+                """;
+        GatewayRouteDefinition filter = definition("AddResponseHeader", Map.of("name", "X-Trace", "value", "enabled"));
+
+        String updated = GatewayRouteConfigService.replaceDefaultFilters(yaml, List.of(filter));
+
+        assertThat(GatewayRouteConfigService.parseRoutes(updated)).singleElement()
+                .extracting(GatewayRoute::getId).isEqualTo("base-organization");
+        assertThat(GatewayRouteConfigService.parseDefaultFilters(updated)).singleElement()
+                .satisfies(item -> assertThat(item.getArgs()).containsEntry("name", "X-Trace"));
+    }
+
+    @Test
+    void shouldRejectInvalidDefaultRateLimit() {
+        GatewayRouteDefinition rateLimit = definition("RequestRateLimiter", Map.of(
+                "redis-rate-limiter.replenishRate", "10",
+                "redis-rate-limiter.burstCapacity", "5",
+                "rate-limiter", "#{@defaultRedisRateLimiter}",
+                "key-resolver", "#{@remoteAddressKeyResolver}"));
+
+        org.assertj.core.api.Assertions.assertThatIllegalArgumentException()
+                .isThrownBy(() -> GatewayRouteConfigService.validateDefaultFilters(List.of(rateLimit)))
+                .withMessageContaining("突发容量不能小于补充速率");
+    }
+
+    private GatewayRouteDefinition definition(String name, Map<String, String> args) {
+        GatewayRouteDefinition definition = new GatewayRouteDefinition();
+        definition.setName(name);
+        definition.setArgs(args);
+        return definition;
+    }
+
     private GatewayRoute route(String id, String uri, String predicateName, String argName, String argValue) {
         GatewayRoute route = new GatewayRoute();
         route.setId(id);

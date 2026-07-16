@@ -3,6 +3,7 @@ package io.github.opensabre.sysadmin.gateway.rest;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteConfig;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteChange;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteDeleteForm;
+import io.github.opensabre.sysadmin.gateway.model.GatewayDefaultFilterChange;
 import io.github.opensabre.sysadmin.gateway.service.IGatewayRouteConfigService;
 import io.github.opensabre.governance.audit.annotations.Audit;
 import io.github.opensabre.governance.audit.annotations.OperationType;
@@ -63,5 +64,12 @@ public class GatewayRouteController {
     @Audit(operationType = OperationType.DELETE, description = "删除并发布网关路由", module = "GATEWAY_ROUTE", response = true, key = "#routeId")
     public GatewayRouteConfig delete(@PathVariable String routeId, @Valid @RequestBody GatewayRouteDeleteForm form) {
         return gatewayRouteConfigService.delete(routeId, form.getBaseVersion());
+    }
+
+    @PutMapping("/default-filters")
+    @Operation(summary = "更新并发布网关全局过滤器")
+    @Audit(operationType = OperationType.UPDATE, description = "更新并发布网关全局过滤器", module = "GATEWAY_FILTER", response = true)
+    public GatewayRouteConfig updateDefaultFilters(@Valid @RequestBody GatewayDefaultFilterChange change) {
+        return gatewayRouteConfigService.updateDefaultFilters(change);
     }
 }
