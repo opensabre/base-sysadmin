@@ -2,6 +2,7 @@ package io.github.opensabre.sysadmin.gateway.service;
 
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteConfig;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteChange;
+import io.github.opensabre.sysadmin.gateway.model.GatewayDefaultFilterChange;
 
 /**
  * 读取配置中心中的网关路由。
@@ -23,4 +24,7 @@ public interface IGatewayRouteConfigService {
 
     /** 使用调用方读取到的版本删除一条路由并发布到 Nacos。 */
     GatewayRouteConfig delete(String routeId, String baseVersion);
+
+    /** 替换 Nacos 中的 default-filters，并用版本号保护并发发布。 */
+    GatewayRouteConfig updateDefaultFilters(GatewayDefaultFilterChange change);
 }

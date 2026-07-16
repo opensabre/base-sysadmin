@@ -4,6 +4,7 @@ import io.github.opensabre.sysadmin.gateway.model.GatewayRoute;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteConfig;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteChange;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteDefinition;
+import io.github.opensabre.sysadmin.gateway.model.GatewayDefaultFilterChange;
 import io.github.opensabre.sysadmin.gateway.service.IGatewayRouteConfigService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,9 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
     private static final Set<String> SUPPORTED_FILTERS = Set.of(
             "StripPrefix", "PrefixPath", "RewritePath", "AddRequestHeader", "AddResponseHeader",
             "RemoveRequestHeader", "RemoveResponseHeader", "Retry", "CircuitBreaker");
+    private static final Set<String> SUPPORTED_DEFAULT_FILTERS = Set.of(
+            "TokenRelay", "AddRequestHeader", "AddResponseHeader", "RemoveRequestHeader", "RemoveResponseHeader",
+            "Retry", "CircuitBreaker", "RequestRateLimiter");
 
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private final String nacosServerUrl;
@@ -60,6 +64,7 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
         GatewayRouteConfig config = new GatewayRouteConfig();
         config.setVersion(md5(content));
         config.setRoutes(parseRoutes(content));
+        config.setDefaultFilters(parseDefaultFilters(content));
         return config;
     }
 
@@ -100,6 +105,23 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
             }
             routes.remove(index);
         });
+    }
+
+    @Override
+    public GatewayRouteConfig updateDefaultFilters(GatewayDefaultFilterChange change) {
+        String content = readConfigContent();
+        String currentVersion = md5(content);
+        if (!currentVersion.equals(change.getBaseVersion())) {
+            throw new IllegalStateException("网关配置已被其他人修改，请刷新后重试");
+        }
+        validateDefaultFilters(change.getDefaultFilters());
+        String updatedContent = replaceDefaultFilters(content, change.getDefaultFilters());
+        publishConfig(updatedContent, currentVersion);
+        GatewayRouteConfig result = new GatewayRouteConfig();
+        result.setVersion(md5(updatedContent));
+        result.setRoutes(parseRoutes(updatedContent));
+        result.setDefaultFilters(change.getDefaultFilters());
+        return result;
     }
 
     /**
@@ -199,6 +221,13 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
         return routes;
     }
 
+    @SuppressWarnings("unchecked")
+    static List<GatewayRouteDefinition> parseDefaultFilters(String content) {
+        Object loaded = new Yaml().load(content);
+        Object gateway = child(child(loaded instanceof Map<?, ?> root ? root.get("spring") : null, "cloud"), "gateway");
+        return parseDefinitions(child(gateway, "default-filters"), false);
+    }
+
     /**
      * 仅替换 spring.cloud.gateway.routes 节点；路由外的键和值保持原有语义及顺序。
      */
@@ -215,6 +244,17 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
             throw new IllegalStateException("网关配置缺少 spring.cloud.gateway 节点");
         }
         ((Map<Object, Object>) gatewayMap).put("routes", toRouteMaps(routes));
+        return new Yaml().dump(root);
+    }
+
+    /** 仅替换 spring.cloud.gateway.default-filters，不影响 routes 及其他网关配置。 */
+    @SuppressWarnings("unchecked")
+    static String replaceDefaultFilters(String content, List<GatewayRouteDefinition> filters) {
+        Object loaded = new Yaml().load(content);
+        if (!(loaded instanceof Map<?, ?> root)) throw new IllegalStateException("网关配置不是有效的 YAML 对象");
+        Object gateway = child(child(root.get("spring"), "cloud"), "gateway");
+        if (!(gateway instanceof Map<?, ?> gatewayMap)) throw new IllegalStateException("网关配置缺少 spring.cloud.gateway 节点");
+        ((Map<Object, Object>) gatewayMap).put("default-filters", toDefinitionMaps(filters));
         return new Yaml().dump(root);
     }
 
@@ -254,6 +294,26 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
         }
         validateDefinitions(route.getPredicates(), SUPPORTED_PREDICATES, "断言", true);
         validateDefinitions(route.getFilters(), SUPPORTED_FILTERS, "过滤器", false);
+    }
+
+    static void validateDefaultFilters(List<GatewayRouteDefinition> filters) {
+        validateDefinitions(filters, SUPPORTED_DEFAULT_FILTERS, "全局过滤器", false);
+        for (GatewayRouteDefinition filter : filters) {
+            if ("RequestRateLimiter".equals(filter.getName())) {
+                Map<String, String> args = filter.getArgs();
+                int replenish = parsePositive(args.get("redis-rate-limiter.replenishRate"), "限流补充速率");
+                int burst = parsePositive(args.get("redis-rate-limiter.burstCapacity"), "限流突发容量");
+                if (burst < replenish) throw new IllegalArgumentException("限流突发容量不能小于补充速率");
+                if (!"#{@defaultRedisRateLimiter}".equals(args.get("rate-limiter"))) throw new IllegalArgumentException("限流器必须使用 defaultRedisRateLimiter");
+                String keyResolver = args.get("key-resolver");
+                if (!Set.of("#{@remoteAddressKeyResolver}", "#{@apiKeyResolver}").contains(keyResolver)) throw new IllegalArgumentException("限流 Key Resolver 仅支持 IP 或请求路径");
+            }
+        }
+    }
+
+    private static int parsePositive(String value, String field) {
+        try { int parsed = Integer.parseInt(value); if (parsed > 0 && parsed <= 100000) return parsed; } catch (NumberFormatException ignored) { }
+        throw new IllegalArgumentException(field + "必须是 1 到 100000 的整数");
     }
 
     private static void validateDefinitions(List<GatewayRouteDefinition> definitions, Set<String> allowed, String type,
