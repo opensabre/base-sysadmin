@@ -14,8 +14,8 @@ import io.github.opensabre.sysadmin.usage.model.vo.UsageObjectSummaryVo;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageRankingVo;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageSummaryVo;
 import io.github.opensabre.sysadmin.usage.service.IUsageCounterService;
+import io.github.opensabre.governance.usage.UsageCounterRecorder;
 import io.github.opensabre.governance.usage.UsageRecord;
-import io.github.opensabre.sysadmin.usage.event.UsageCounterEdaEventHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -66,12 +66,12 @@ public class UsageCounterController {
     @PostMapping("/records")
     @Operation(summary = "上报通用对象使用计次记录")
     public boolean recordUsage(@RequestBody UsageRecord record) {
-        usageCounterEdaEventHandler.record(record);
+        usageCounterRecorder.record(record);
         return true;
     }
 
     @Resource
-    private UsageCounterEdaEventHandler usageCounterEdaEventHandler;
+    private UsageCounterRecorder usageCounterRecorder;
 
     @GetMapping("/trend")
     @Operation(summary = "查询对象使用量趋势")
