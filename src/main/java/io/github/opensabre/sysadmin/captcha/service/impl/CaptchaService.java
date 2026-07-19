@@ -9,10 +9,7 @@ import io.github.opensabre.sysadmin.captcha.service.ICaptchaGenerator;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaService;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaStorageService;
 import io.github.opensabre.sysadmin.captcha.service.IRateLimitService;
-import io.github.opensabre.sysadmin.usage.enums.UsageEvent;
-import io.github.opensabre.sysadmin.usage.enums.UsageObjectType;
-import io.github.opensabre.sysadmin.usage.enums.UsageOutcome;
-import io.github.opensabre.sysadmin.usage.service.IUsageCounterService;
+import io.github.opensabre.governance.usage.CaptchaUsageRecorder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -36,7 +33,7 @@ public abstract class CaptchaService implements ICaptchaService {
     protected IRateLimitService rateLimitService;
 
     @Autowired
-    protected IUsageCounterService usageCounterService;
+    protected CaptchaUsageRecorder captchaUsageRecorder;
 
 
     public CaptchaService(ICaptchaGenerator captchaGenerator) {
@@ -66,18 +63,18 @@ public abstract class CaptchaService implements ICaptchaService {
                 clientInfo.businessId())) {
             throw new RuntimeException("BusinessId rate limit exceeded");
         }
-        recordUsage(scenario, UsageEvent.CAPTCHA_GENERATE, UsageOutcome.ATTEMPT);
+        captchaUsageRecorder.generateAttempt(scenario.getSceneCode());
         try {
             // 验证码生成前置逻辑
             beforeGenerateCaptcha(businessKey, scenario, clientInfo);
             CaptchaInfo captchaInfo = this.captchaGenerator.generate(businessKey, scenario, clientInfo);
             captchaStorage.save(captchaInfo, scenario);
             CaptchaVo captchaVo = afterGenerateCaptcha(captchaInfo);
-            recordUsage(scenario, UsageEvent.CAPTCHA_GENERATE, UsageOutcome.SUCCESS);
+            captchaUsageRecorder.generateSuccess(scenario.getSceneCode());
             log.info("Captcha generated: businessKey={}, captchaId={}, scenario={}", businessKey, captchaVo.getCaptchaId(), scenario);
             return captchaVo;
         } catch (RuntimeException exception) {
-            recordUsage(scenario, UsageEvent.CAPTCHA_GENERATE, UsageOutcome.FAILURE);
+            captchaUsageRecorder.generateFailure(scenario.getSceneCode());
             throw exception;
         }
     }
@@ -94,13 +91,14 @@ public abstract class CaptchaService implements ICaptchaService {
 
     @Override
     public boolean validateCaptcha(String captchaId, CaptchaScene scenario, String inputCode) {
-        recordUsage(scenario, UsageEvent.CAPTCHA_VERIFY, UsageOutcome.ATTEMPT);
+        captchaUsageRecorder.verifyAttempt(scenario.getSceneCode());
         try {
             boolean valid = validateCaptchaInternal(captchaId, scenario, inputCode);
-            recordUsage(scenario, UsageEvent.CAPTCHA_VERIFY, valid ? UsageOutcome.SUCCESS : UsageOutcome.FAILURE);
+            if (valid) captchaUsageRecorder.verifySuccess(scenario.getSceneCode());
+            else captchaUsageRecorder.verifyFailure(scenario.getSceneCode());
             return valid;
         } catch (RuntimeException exception) {
-            recordUsage(scenario, UsageEvent.CAPTCHA_VERIFY, UsageOutcome.FAILURE);
+            captchaUsageRecorder.verifyFailure(scenario.getSceneCode());
             throw exception;
         }
     }
@@ -133,10 +131,6 @@ public abstract class CaptchaService implements ICaptchaService {
         captchaStorage.incrementAttempts(captchaId, scenario);
         log.warn("Captcha validation failed: captchaId={}, scenario={}, attempts={}", captchaId, scenario, captchaInfo.getAttempts() + 1);
         return false;
-    }
-
-    private void recordUsage(CaptchaScene scenario, UsageEvent event, UsageOutcome outcome) {
-        usageCounterService.record(UsageObjectType.CAPTCHA_SCENE, scenario.getSceneCode(), event, outcome);
     }
 
     /**
