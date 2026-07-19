@@ -14,6 +14,8 @@ import io.github.opensabre.sysadmin.usage.model.vo.UsageObjectSummaryVo;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageRankingVo;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageSummaryVo;
 import io.github.opensabre.sysadmin.usage.service.IUsageCounterService;
+import io.github.opensabre.governance.usage.UsageRecord;
+import io.github.opensabre.sysadmin.usage.event.UsageCounterEdaEventHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -57,6 +59,19 @@ public class UsageCounterController {
                 .build());
         return true;
     }
+
+    /**
+     * Governance starter 的通用计次契约。该接口受理后异步聚合。
+     */
+    @PostMapping("/records")
+    @Operation(summary = "上报通用对象使用计次记录")
+    public boolean recordUsage(@RequestBody UsageRecord record) {
+        usageCounterEdaEventHandler.record(record);
+        return true;
+    }
+
+    @Resource
+    private UsageCounterEdaEventHandler usageCounterEdaEventHandler;
 
     @GetMapping("/trend")
     @Operation(summary = "查询对象使用量趋势")

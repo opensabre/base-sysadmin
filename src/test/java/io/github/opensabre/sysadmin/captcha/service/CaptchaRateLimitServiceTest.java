@@ -5,6 +5,7 @@ import io.github.opensabre.sysadmin.ratelimit.model.RateLimitConfig;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitResult;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitScene;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;
+import io.github.opensabre.governance.usage.RateLimitUsageRecorder;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -31,9 +32,10 @@ class CaptchaRateLimitServiceTest {
                 .enabled(true)
                 .build();
         when(sceneService.getByCode(IRateLimitService.CAPTCHA_IP_SCENE)).thenReturn(scene);
-        when(rateLimitService.checkLimit(any())).thenReturn(RateLimitResult.allowed("key", 1, 8, 7, 0));
+        when(rateLimitService.checkLimit(any(RateLimitConfig.class))).thenReturn(RateLimitResult.allowed("key", 1, 8, 7, 0));
         ReflectionTestUtils.setField(service, "rateLimitSceneService", sceneService);
         ReflectionTestUtils.setField(service, "rateLimitService", rateLimitService);
+        ReflectionTestUtils.setField(service, "rateLimitUsageRecorder", new RateLimitUsageRecorder(record -> { }));
 
         assertTrue(service.isAllowed(IRateLimitService.CAPTCHA_IP_SCENE, "127.0.0.1"));
         verify(rateLimitService).checkLimit(argThat((RateLimitConfig config) ->

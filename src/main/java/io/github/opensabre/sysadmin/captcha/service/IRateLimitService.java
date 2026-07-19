@@ -4,10 +4,7 @@ import io.github.opensabre.sysadmin.ratelimit.model.RateLimitConfig;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitResult;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitScene;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;
-import io.github.opensabre.sysadmin.usage.enums.UsageEvent;
-import io.github.opensabre.sysadmin.usage.enums.UsageObjectType;
-import io.github.opensabre.sysadmin.usage.enums.UsageOutcome;
-import io.github.opensabre.sysadmin.usage.service.IUsageCounterService;
+import io.github.opensabre.governance.usage.RateLimitUsageRecorder;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +22,7 @@ public class IRateLimitService {
     @Resource
     private IRateLimitSceneService rateLimitSceneService;
     @Resource
-    private IUsageCounterService usageCounterService;
+    private RateLimitUsageRecorder rateLimitUsageRecorder;
 
     /** 验证码全局 IP 限次场景。 */
     public static final String CAPTCHA_IP_SCENE = "CAPTCHA_IP";
@@ -60,8 +57,7 @@ public class IRateLimitService {
         if (!scene.isEnabled()) {
             return true;
         }
-        usageCounterService.record(UsageObjectType.RATE_LIMIT_SCENE, sceneCode,
-                UsageEvent.RATE_LIMIT_CHECK, UsageOutcome.ATTEMPT);
+        rateLimitUsageRecorder.checkAttempt(sceneCode);
         try {
             RateLimitResult result = rateLimitService.checkLimit(RateLimitConfig.builder()
                     .keyPrefix(scene.getKeyPrefix())
@@ -72,12 +68,11 @@ public class IRateLimitService {
                     .enabled(true)
                     .build());
             logIfExceeded(sceneCode, key, result);
-            usageCounterService.record(UsageObjectType.RATE_LIMIT_SCENE, sceneCode,
-                    UsageEvent.RATE_LIMIT_CHECK, result.isAllowed() ? UsageOutcome.SUCCESS : UsageOutcome.FAILURE);
+            if (result.isAllowed()) rateLimitUsageRecorder.allowed(sceneCode);
+            else rateLimitUsageRecorder.rejected(sceneCode);
             return result.isAllowed();
         } catch (RuntimeException exception) {
-            usageCounterService.record(UsageObjectType.RATE_LIMIT_SCENE, sceneCode,
-                    UsageEvent.RATE_LIMIT_CHECK, UsageOutcome.FAILURE);
+            rateLimitUsageRecorder.rejected(sceneCode);
             throw exception;
         }
     }
