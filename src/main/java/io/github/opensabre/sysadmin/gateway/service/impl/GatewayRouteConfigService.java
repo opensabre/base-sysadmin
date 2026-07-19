@@ -420,9 +420,11 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
             if (previousIssuer != null && !previousIssuer.equals(client.getIssuerUri())) {
                 throw new IllegalArgumentException("同一 Provider 只能配置一个 Issuer URI");
             }
+            // opensabre 是当前非 TLS 集成环境的受控入口；其他 HTTP 回调仍禁止，避免误配为不安全的外部地址。
             if (!(client.getRedirectUri().startsWith("http://localhost:")
+                    || client.getRedirectUri().startsWith("http://opensabre:")
                     || client.getRedirectUri().startsWith("https://"))) {
-                throw new IllegalArgumentException("回调地址仅支持 HTTPS 或 localhost");
+                throw new IllegalArgumentException("回调地址仅支持 HTTPS、localhost 或 opensabre 测试入口");
             }
             if (client.getScopes() == null || client.getScopes().isEmpty()) {
                 throw new IllegalArgumentException("OAuth2 作用域不能为空");

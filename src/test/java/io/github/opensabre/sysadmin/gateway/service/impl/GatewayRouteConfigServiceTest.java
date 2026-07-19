@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class GatewayRouteConfigServiceTest {
 
@@ -144,6 +145,30 @@ class GatewayRouteConfigServiceTest {
                     assertThat(item.getIssuerUri()).isEqualTo("http://authorization:8000");
                     assertThat(item.getClientSecret()).isEqualTo("ENC(ciphertext)");
                 });
+    }
+
+    @Test
+    void shouldAllowConfiguredOpensabreHttpCallbackOnly() {
+        GatewayOauth2Client client = oauth2Client("http://opensabre:8080/login/oauth2/code/base-gateway-client");
+
+        GatewayRouteConfigService.validateOauth2Clients(List.of(client));
+
+        client.setRedirectUri("http://example.com/login/oauth2/code/base-gateway-client");
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> GatewayRouteConfigService.validateOauth2Clients(List.of(client)))
+                .withMessageContaining("回调地址");
+    }
+
+    private GatewayOauth2Client oauth2Client(String redirectUri) {
+        GatewayOauth2Client client = new GatewayOauth2Client();
+        client.setRegistrationId("base-gateway-client");
+        client.setProvider("custom-issuer");
+        client.setIssuerUri("http://base-authorization:8000");
+        client.setClientId("base-gateway");
+        client.setClientSecret("secret");
+        client.setRedirectUri(redirectUri);
+        client.setScopes(List.of("openid"));
+        return client;
     }
 
     private GatewayRouteDefinition definition(String name, Map<String, String> args) {
