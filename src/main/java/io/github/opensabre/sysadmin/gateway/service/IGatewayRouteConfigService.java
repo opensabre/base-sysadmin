@@ -3,6 +3,7 @@ package io.github.opensabre.sysadmin.gateway.service;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteConfig;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteChange;
 import io.github.opensabre.sysadmin.gateway.model.GatewayDefaultFilterChange;
+import io.github.opensabre.sysadmin.gateway.model.GatewayOauth2ClientChange;
 
 /**
  * 读取配置中心中的网关路由。
@@ -27,4 +28,6 @@ public interface IGatewayRouteConfigService {
 
     /** 替换 Nacos 中的 default-filters，并用版本号保护并发发布。 */
     GatewayRouteConfig updateDefaultFilters(GatewayDefaultFilterChange change);
+    /** 发布网关 OAuth2/OIDC 登录认证方式。 */
+    GatewayRouteConfig updateOauth2Clients(GatewayOauth2ClientChange change);
 }

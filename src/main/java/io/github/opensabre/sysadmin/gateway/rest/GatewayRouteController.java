@@ -4,6 +4,7 @@ import io.github.opensabre.sysadmin.gateway.model.GatewayRouteConfig;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteChange;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteDeleteForm;
 import io.github.opensabre.sysadmin.gateway.model.GatewayDefaultFilterChange;
+import io.github.opensabre.sysadmin.gateway.model.GatewayOauth2ClientChange;
 import io.github.opensabre.sysadmin.gateway.service.IGatewayRouteConfigService;
 import io.github.opensabre.governance.audit.annotations.Audit;
 import io.github.opensabre.governance.audit.annotations.OperationType;
@@ -71,5 +72,13 @@ public class GatewayRouteController {
     @Audit(operationType = OperationType.UPDATE, description = "更新并发布网关全局过滤器", module = "GATEWAY_FILTER", response = true)
     public GatewayRouteConfig updateDefaultFilters(@Valid @RequestBody GatewayDefaultFilterChange change) {
         return gatewayRouteConfigService.updateDefaultFilters(change);
+    }
+
+    /** 显式发布网关 OAuth2/OIDC 登录认证方式，不会修改授权服务的客户端。 */
+    @PutMapping("/oauth2-clients")
+    @Operation(summary = "更新并发布网关 OAuth2 认证方式")
+    @Audit(operationType = OperationType.UPDATE, description = "更新并发布网关 OAuth2 认证方式", module = "GATEWAY_OAUTH2_CLIENT", response = true)
+    public GatewayRouteConfig updateOauth2Clients(@Valid @RequestBody GatewayOauth2ClientChange change) {
+        return gatewayRouteConfigService.updateOauth2Clients(change);
     }
 }

@@ -5,9 +5,13 @@ import io.github.opensabre.sysadmin.gateway.model.GatewayRouteConfig;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteChange;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteDefinition;
 import io.github.opensabre.sysadmin.gateway.model.GatewayDefaultFilterChange;
+import io.github.opensabre.sysadmin.gateway.model.GatewayOauth2Client;
+import io.github.opensabre.sysadmin.gateway.model.GatewayOauth2ClientChange;
 import io.github.opensabre.sysadmin.gateway.service.IGatewayRouteConfigService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.jasypt.encryption.StringEncryptor;
+import jakarta.annotation.Resource;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -49,6 +53,9 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
     private final String dataId;
     private final String group;
 
+    @Resource
+    private StringEncryptor stringEncryptor;
+
     public GatewayRouteConfigService(
             @Value("${opensabre.gateway.config.server-url:http://${REGISTER_HOST:localhost}:${REGISTER_PORT:8848}}") String nacosServerUrl,
             @Value("${opensabre.gateway.config.data-id:base-gateway.yml}") String dataId,
@@ -65,6 +72,7 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
         config.setVersion(md5(content));
         config.setRoutes(parseRoutes(content));
         config.setDefaultFilters(parseDefaultFilters(content));
+        config.setOauth2Clients(maskSecrets(parseOauth2Clients(content)));
         return config;
     }
 
@@ -121,6 +129,25 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
         result.setVersion(md5(updatedContent));
         result.setRoutes(parseRoutes(updatedContent));
         result.setDefaultFilters(change.getDefaultFilters());
+        return result;
+    }
+
+    @Override
+    public GatewayRouteConfig updateOauth2Clients(GatewayOauth2ClientChange change) {
+        String content = readConfigContent();
+        String currentVersion = md5(content);
+        if (!currentVersion.equals(change.getBaseVersion())) {
+            throw new IllegalStateException("网关配置已被其他人修改，请刷新后重试");
+        }
+        validateOauth2Clients(change.getClients());
+        List<GatewayOauth2Client> merged = mergeSecrets(change.getClients(), parseOauth2Clients(content));
+        String updatedContent = replaceOauth2Clients(content, merged);
+        publishConfig(updatedContent, currentVersion);
+        GatewayRouteConfig result = new GatewayRouteConfig();
+        result.setVersion(md5(updatedContent));
+        result.setRoutes(parseRoutes(updatedContent));
+        result.setDefaultFilters(parseDefaultFilters(updatedContent));
+        result.setOauth2Clients(maskSecrets(merged));
         return result;
     }
 
@@ -228,6 +255,71 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
         return parseDefinitions(child(gateway, "default-filters"), false);
     }
 
+    @SuppressWarnings("unchecked")
+    static List<GatewayOauth2Client> parseOauth2Clients(String content) {
+        Object loaded = new Yaml().load(content);
+        Object registrationValue = child(child(child(child(loaded instanceof Map<?, ?> root ? root.get("spring") : null,
+                "security"), "oauth2"), "client"), "registration");
+        Object providerValue = child(child(child(child(loaded instanceof Map<?, ?> root ? root.get("spring") : null,
+                "security"), "oauth2"), "client"), "provider");
+        Object disabledValue = child(child(child(loaded instanceof Map<?, ?> root ? root.get("opensabre") : null,
+                "gateway"), "oauth2"), "disabled-registration-ids");
+        Set<String> disabled = disabledValue instanceof List<?> values
+                ? values.stream().map(String::valueOf).collect(java.util.stream.Collectors.toSet()) : Set.of();
+        if (!(registrationValue instanceof Map<?, ?> registrations)) return List.of();
+        List<GatewayOauth2Client> result = new ArrayList<>();
+        registrations.forEach((id, value) -> {
+            if (!(value instanceof Map<?, ?> registration)) return;
+            GatewayOauth2Client item = new GatewayOauth2Client();
+            item.setRegistrationId(String.valueOf(id));
+            item.setProvider(stringValue(registration.get("provider")));
+            Object provider = providerValue instanceof Map<?, ?> providers ? providers.get(item.getProvider()) : null;
+            item.setIssuerUri(stringValue(child(provider, "issuer-uri")));
+            item.setClientId(stringValue(registration.get("client-id")));
+            item.setClientSecret(stringValue(registration.get("client-secret")));
+            item.setRedirectUri(stringValue(registration.get("redirect-uri")));
+            Object scopes = registration.get("scope");
+            if (scopes instanceof List<?> values) item.setScopes(values.stream().map(String::valueOf).toList());
+            Object enabled = registration.get("enabled");
+            item.setEnabled(!disabled.contains(item.getRegistrationId()) && (enabled == null || !"false".equals(String.valueOf(enabled))));
+            result.add(item);
+        });
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    static String replaceOauth2Clients(String content, List<GatewayOauth2Client> clients) {
+        Object loaded = new Yaml().load(content);
+        if (!(loaded instanceof Map<?, ?> root)) throw new IllegalStateException("网关配置不是有效的 YAML 对象");
+        Map<Object, Object> spring = (Map<Object, Object>) root.get("spring");
+        Map<Object, Object> security = (Map<Object, Object>) spring.computeIfAbsent("security", key -> new LinkedHashMap<>());
+        Map<Object, Object> oauth2 = (Map<Object, Object>) security.computeIfAbsent("oauth2", key -> new LinkedHashMap<>());
+        Map<Object, Object> client = (Map<Object, Object>) oauth2.computeIfAbsent("client", key -> new LinkedHashMap<>());
+        Map<Object, Object> registrations = new LinkedHashMap<>();
+        Map<Object, Object> providers = new LinkedHashMap<>();
+        for (GatewayOauth2Client item : clients) {
+            Map<Object, Object> value = new LinkedHashMap<>();
+            value.put("provider", item.getProvider()); value.put("client-id", item.getClientId());
+            value.put("client-secret", item.getClientSecret()); value.put("client-authentication-method", "client_secret_basic");
+            value.put("authorization-grant-type", "authorization_code"); value.put("redirect-uri", item.getRedirectUri());
+            value.put("scope", item.getScopes()); registrations.put(item.getRegistrationId(), value);
+            Map<Object, Object> provider = new LinkedHashMap<>();
+            provider.put("issuer-uri", item.getIssuerUri());
+            provider.put("user-info-uri", item.getIssuerUri() + "/userinfo");
+            provider.put("user-name-attribute", "name");
+            providers.put(item.getProvider(), provider);
+        }
+        client.put("registration", registrations);
+        client.put("provider", providers);
+        Map<Object, Object> rootMap = (Map<Object, Object>) root;
+        Map<Object, Object> opensabre = (Map<Object, Object>) rootMap.computeIfAbsent("opensabre", key -> new LinkedHashMap<>());
+        Map<Object, Object> gateway = (Map<Object, Object>) opensabre.computeIfAbsent("gateway", key -> new LinkedHashMap<>());
+        Map<Object, Object> gatewayOauth2 = (Map<Object, Object>) gateway.computeIfAbsent("oauth2", key -> new LinkedHashMap<>());
+        gatewayOauth2.put("disabled-registration-ids", clients.stream().filter(item -> !item.isEnabled())
+                .map(GatewayOauth2Client::getRegistrationId).toList());
+        return new Yaml().dump(root);
+    }
+
     /**
      * 仅替换 spring.cloud.gateway.routes 节点；路由外的键和值保持原有语义及顺序。
      */
@@ -309,6 +401,66 @@ public class GatewayRouteConfigService implements IGatewayRouteConfigService {
                 if (!Set.of("#{@remoteAddressKeyResolver}", "#{@apiKeyResolver}").contains(keyResolver)) throw new IllegalArgumentException("限流 Key Resolver 仅支持 IP 或请求路径");
             }
         }
+    }
+
+    static void validateOauth2Clients(List<GatewayOauth2Client> clients) {
+        Set<String> ids = new java.util.HashSet<>();
+        Map<String, String> issuers = new LinkedHashMap<>();
+        for (GatewayOauth2Client client : clients) {
+            if (client == null || client.getRegistrationId() == null
+                    || !ROUTE_ID_PATTERN.matcher(client.getRegistrationId()).matches()) {
+                throw new IllegalArgumentException("OAuth2 注册名格式不正确");
+            }
+            if (!ids.add(client.getRegistrationId())) throw new IllegalArgumentException("OAuth2 注册名不能重复");
+            if (isBlank(client.getProvider()) || isBlank(client.getIssuerUri()) || isBlank(client.getClientId()) || isBlank(client.getRedirectUri())) {
+                throw new IllegalArgumentException("OAuth2 Provider、Issuer URI、客户端 ID 和回调地址不能为空");
+            }
+            if (!(client.getIssuerUri().startsWith("http://") || client.getIssuerUri().startsWith("https://"))) throw new IllegalArgumentException("Issuer URI 必须是 HTTP(S) 地址");
+            String previousIssuer = issuers.putIfAbsent(client.getProvider(), client.getIssuerUri());
+            if (previousIssuer != null && !previousIssuer.equals(client.getIssuerUri())) {
+                throw new IllegalArgumentException("同一 Provider 只能配置一个 Issuer URI");
+            }
+            if (!(client.getRedirectUri().startsWith("http://localhost:")
+                    || client.getRedirectUri().startsWith("https://"))) {
+                throw new IllegalArgumentException("回调地址仅支持 HTTPS 或 localhost");
+            }
+            if (client.getScopes() == null || client.getScopes().isEmpty()) {
+                throw new IllegalArgumentException("OAuth2 作用域不能为空");
+            }
+        }
+    }
+
+    private List<GatewayOauth2Client> mergeSecrets(List<GatewayOauth2Client> clients,
+            List<GatewayOauth2Client> current) {
+        Map<String, String> currentSecrets = new LinkedHashMap<>();
+        current.forEach(item -> currentSecrets.put(item.getRegistrationId(), item.getClientSecret()));
+        List<GatewayOauth2Client> result = new ArrayList<>();
+        for (GatewayOauth2Client client : clients) {
+            if (isBlank(client.getClientSecret())) client.setClientSecret(currentSecrets.get(client.getRegistrationId()));
+            if (client.isEnabled() && isBlank(client.getClientSecret())) {
+                throw new IllegalArgumentException("启用的 OAuth2 认证方式必须设置客户端密钥");
+            }
+            if (!isBlank(client.getClientSecret()) && !client.getClientSecret().startsWith("ENC(")
+                    && !client.getClientSecret().startsWith("${")) {
+                client.setClientSecret("ENC(" + stringEncryptor.encrypt(client.getClientSecret()) + ")");
+            }
+            result.add(client);
+        }
+        return result;
+    }
+
+    private static List<GatewayOauth2Client> maskSecrets(List<GatewayOauth2Client> clients) {
+        List<GatewayOauth2Client> result = new ArrayList<>();
+        for (GatewayOauth2Client source : clients) {
+            GatewayOauth2Client target = new GatewayOauth2Client();
+            target.setRegistrationId(source.getRegistrationId()); target.setProvider(source.getProvider());
+            target.setIssuerUri(source.getIssuerUri());
+            target.setClientId(source.getClientId()); target.setRedirectUri(source.getRedirectUri());
+            target.setScopes(new ArrayList<>(source.getScopes())); target.setEnabled(source.isEnabled());
+            target.setClientSecret(isBlank(source.getClientSecret()) ? "" : "******");
+            result.add(target);
+        }
+        return result;
     }
 
     private static int parsePositive(String value, String field) {

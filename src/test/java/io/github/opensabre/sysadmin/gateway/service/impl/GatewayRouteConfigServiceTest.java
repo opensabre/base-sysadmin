@@ -2,6 +2,7 @@ package io.github.opensabre.sysadmin.gateway.service.impl;
 
 import io.github.opensabre.sysadmin.gateway.model.GatewayRoute;
 import io.github.opensabre.sysadmin.gateway.model.GatewayRouteDefinition;
+import io.github.opensabre.sysadmin.gateway.model.GatewayOauth2Client;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -108,6 +109,41 @@ class GatewayRouteConfigServiceTest {
         org.assertj.core.api.Assertions.assertThatIllegalArgumentException()
                 .isThrownBy(() -> GatewayRouteConfigService.validateDefaultFilters(List.of(rateLimit)))
                 .withMessageContaining("突发容量不能小于补充速率");
+    }
+
+    @Test
+    void shouldReplaceOauth2RegistrationsWithoutChangingRoutes() {
+        String yaml = """
+                spring:
+                  cloud:
+                    gateway:
+                      routes: []
+                  security:
+                    oauth2:
+                      client:
+                        provider:
+                          custom-issuer:
+                            issuer-uri: http://authorization:8000
+                        registration: {}
+                """;
+        GatewayOauth2Client client = new GatewayOauth2Client();
+        client.setRegistrationId("base-gateway-local");
+        client.setProvider("custom-issuer");
+        client.setIssuerUri("http://authorization:8000");
+        client.setClientId("base-gateway-local");
+        client.setClientSecret("ENC(ciphertext)");
+        client.setRedirectUri("http://localhost:3000/login/oauth2/code/base-gateway-client");
+        client.setScopes(List.of("openid", "profile"));
+
+        String updated = GatewayRouteConfigService.replaceOauth2Clients(yaml, List.of(client));
+
+        assertThat(GatewayRouteConfigService.parseRoutes(updated)).isEmpty();
+        assertThat(GatewayRouteConfigService.parseOauth2Clients(updated)).singleElement()
+                .satisfies(item -> {
+                    assertThat(item.getRegistrationId()).isEqualTo("base-gateway-local");
+                    assertThat(item.getIssuerUri()).isEqualTo("http://authorization:8000");
+                    assertThat(item.getClientSecret()).isEqualTo("ENC(ciphertext)");
+                });
     }
 
     private GatewayRouteDefinition definition(String name, Map<String, String> args) {
