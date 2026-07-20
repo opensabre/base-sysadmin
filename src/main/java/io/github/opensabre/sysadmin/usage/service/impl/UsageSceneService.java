@@ -2,6 +2,8 @@ package io.github.opensabre.sysadmin.usage.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.opensabre.sysadmin.usage.dao.UsageSceneMapper;
 import io.github.opensabre.sysadmin.usage.model.UsageScene;
@@ -19,6 +21,10 @@ public class UsageSceneService extends ServiceImpl<UsageSceneMapper, UsageScene>
         return getOne(wrapper(type, id, event).last("limit 1"));
     }
     @Override public List<UsageScene> list() { return super.list(); }
+    @Override public IPage<UsageScene> page(long pageNum, long pageSize) {
+        return super.page(new Page<>(pageNum, pageSize), new LambdaQueryWrapper<UsageScene>()
+                .orderByDesc(UsageScene::getUpdatedTime));
+    }
     @Override public boolean saveScene(UsageScene scene) { return scene != null && get(scene.getObjectType(), scene.getObjectId(), scene.getUsageEvent()) == null && save(scene); }
     @Override public boolean updateScene(UsageScene scene) { return scene != null && get(scene.getObjectType(), scene.getObjectId(), scene.getUsageEvent()) != null && update(scene, wrapper(scene.getObjectType(), scene.getObjectId(), scene.getUsageEvent())); }
     @Override public boolean deleteScene(String type, String id, String event) { return remove(wrapper(type, id, event)); }
