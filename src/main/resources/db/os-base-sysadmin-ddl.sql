@@ -183,6 +183,23 @@ CREATE TABLE IF NOT EXISTS `base_sys_notification_record` (
     KEY `idx_created_time` (`created_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知发送记录表';
 
+CREATE TABLE IF NOT EXISTS `base_sys_usage_scene` (
+    `id` varchar(32) NOT NULL COMMENT '主键ID',
+    `object_type` varchar(64) NOT NULL COMMENT '对象类型',
+    `object_id` varchar(128) NOT NULL COMMENT '对象ID',
+    `usage_event` varchar(64) NOT NULL COMMENT '使用事件',
+    `scene_name` varchar(128) NOT NULL COMMENT '场景名称',
+    `source_app` varchar(64) DEFAULT NULL COMMENT '所属应用',
+    `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否允许计次',
+    `description` varchar(255) DEFAULT NULL COMMENT '描述',
+    `created_by` varchar(100) NOT NULL COMMENT '创建人',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` varchar(100) NOT NULL COMMENT '更新人',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_usage_scene` (`object_type`, `object_id`, `usage_event`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='计次场景登记表';
+
 DROP TABLE IF EXISTS base_sys_dict_item;
 DROP TABLE IF EXISTS base_sys_dict_type;
 CREATE TABLE IF NOT EXISTS `base_sys_dict_type` (

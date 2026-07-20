@@ -7,6 +7,7 @@ import io.github.opensabre.sysadmin.usage.enums.UsageGranularity;
 import io.github.opensabre.sysadmin.usage.enums.UsageObjectType;
 import io.github.opensabre.sysadmin.usage.enums.UsageOutcome;
 import io.github.opensabre.sysadmin.usage.model.UsageCounterRequest;
+import io.github.opensabre.sysadmin.usage.service.IUsageSceneService;
 import io.github.opensabre.sysadmin.usage.model.form.UsageTrendQuery;
 import io.github.opensabre.sysadmin.usage.model.vo.UsageTrendVo;
 import org.junit.jupiter.api.Test;
@@ -22,16 +23,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class UsageCounterServiceTest {
 
     private final UsageCounterMapper mapper = mock(UsageCounterMapper.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
-    private final UsageCounterService service = new UsageCounterService(mapper, eventPublisher);
+    private final IUsageSceneService sceneService = mock(IUsageSceneService.class);
+    private final UsageCounterService service = new UsageCounterService(mapper, eventPublisher, sceneService);
 
     @Test
     void publishesTheRequestedOutcomeAsAnAsyncEvent() {
+        when(sceneService.isEnabled("CAPTCHA_SCENE", "LOGIN_SMS", "CAPTCHA_GENERATE")).thenReturn(true);
         service.record(UsageCounterRequest.builder()
                 .objectType(UsageObjectType.CAPTCHA_SCENE)
                 .objectId("LOGIN_SMS")
@@ -45,6 +49,17 @@ class UsageCounterServiceTest {
                 .extracting(UsageCounterEvent::objectType, UsageCounterEvent::objectId,
                         UsageCounterEvent::usageEvent, UsageCounterEvent::outcome)
                 .containsExactly(UsageObjectType.CAPTCHA_SCENE, "LOGIN_SMS", UsageEvent.CAPTCHA_GENERATE, UsageOutcome.SUCCESS);
+    }
+
+    @Test
+    void ignoresUnregisteredUsageScene() {
+        service.record(UsageCounterRequest.builder()
+                .objectType(UsageObjectType.CAPTCHA_SCENE)
+                .objectId("UNKNOWN")
+                .usageEvent(UsageEvent.CAPTCHA_GENERATE)
+                .outcome(UsageOutcome.SUCCESS)
+                .build());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

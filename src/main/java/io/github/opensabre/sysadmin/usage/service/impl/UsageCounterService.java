@@ -1,6 +1,7 @@
 package io.github.opensabre.sysadmin.usage.service.impl;
 
 import io.github.opensabre.sysadmin.usage.dao.UsageCounterMapper;
+import io.github.opensabre.sysadmin.usage.service.IUsageSceneService;
 import io.github.opensabre.sysadmin.usage.event.UsageCounterEvent;
 import io.github.opensabre.sysadmin.usage.model.UsageCounterRequest;
 import io.github.opensabre.sysadmin.usage.model.form.UsageTrendQuery;
@@ -36,16 +37,22 @@ public class UsageCounterService implements IUsageCounterService {
 
     private final UsageCounterMapper usageCounterMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final IUsageSceneService usageSceneService;
 
-    public UsageCounterService(UsageCounterMapper usageCounterMapper, ApplicationEventPublisher eventPublisher) {
+    public UsageCounterService(UsageCounterMapper usageCounterMapper, ApplicationEventPublisher eventPublisher, IUsageSceneService usageSceneService) {
         this.usageCounterMapper = usageCounterMapper;
         this.eventPublisher = eventPublisher;
+        this.usageSceneService = usageSceneService;
     }
 
     @Override
     public void record(UsageCounterRequest request) {
         if (!isValid(request)) {
             log.warn("Ignore invalid usage counter request: {}", request);
+            return;
+        }
+        if (!usageSceneService.isEnabled(request.getObjectType().name(), request.getObjectId(), request.getUsageEvent().name())) {
+            log.warn("Ignore unregistered or disabled usage scene: objectType={}, objectId={}, eventType={}", request.getObjectType(), request.getObjectId(), request.getUsageEvent());
             return;
         }
         try {
