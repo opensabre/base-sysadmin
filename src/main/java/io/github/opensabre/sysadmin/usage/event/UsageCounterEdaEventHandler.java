@@ -7,6 +7,7 @@ import io.github.opensabre.governance.usage.UsageOutcome;
 import io.github.opensabre.governance.usage.UsageCounterRecorder;
 import io.github.opensabre.governance.usage.UsageRecord;
 import io.github.opensabre.sysadmin.usage.dao.UsageCounterMapper;
+import io.github.opensabre.sysadmin.usage.service.IUsageSceneService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -24,9 +25,11 @@ public class UsageCounterEdaEventHandler implements EdaEventHandler<UsageRecord>
 
     private static final ZoneId STATISTICS_ZONE = ZoneId.of("Asia/Shanghai");
     private final UsageCounterMapper usageCounterMapper;
+    private final IUsageSceneService usageSceneService;
 
-    public UsageCounterEdaEventHandler(UsageCounterMapper usageCounterMapper) {
+    public UsageCounterEdaEventHandler(UsageCounterMapper usageCounterMapper, IUsageSceneService usageSceneService) {
         this.usageCounterMapper = usageCounterMapper;
+        this.usageSceneService = usageSceneService;
     }
 
     @Override
@@ -42,6 +45,10 @@ public class UsageCounterEdaEventHandler implements EdaEventHandler<UsageRecord>
     @Async("usageCounterTaskExecutor")
     public void record(UsageRecord record) {
         try {
+            if (!usageSceneService.isEnabled(record.objectType(), record.objectId(), record.eventType())) {
+                log.warn("Ignore unregistered or disabled usage scene: objectType={}, objectId={}, eventType={}", record.objectType(), record.objectId(), record.eventType());
+                return;
+            }
             LocalDateTime bucket = LocalDateTime.ofInstant(record.occurredAt(), STATISTICS_ZONE).withSecond(0).withNano(0);
             long attempt = record.outcome() == UsageOutcome.ATTEMPT ? 1 : 0;
             long success = record.outcome() == UsageOutcome.SUCCESS ? 1 : 0;
