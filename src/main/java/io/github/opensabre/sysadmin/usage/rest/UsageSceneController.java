@@ -18,8 +18,10 @@ public class UsageSceneController {
     @Resource private IUsageSceneService usageSceneService;
     @GetMapping @Operation(summary = "分页查询计次场景")
     public PageData<UsageScene> page(@RequestParam(defaultValue = "1") long pageNum,
-                                     @RequestParam(defaultValue = "10") long pageSize) {
-        return PageData.from(usageSceneService.page(pageNum, pageSize));
+                                     @RequestParam(defaultValue = "10") long pageSize,
+                                     @RequestParam(required = false) String keywords,
+                                     @RequestParam(required = false) Boolean enabled) {
+        return PageData.from(usageSceneService.page(pageNum, pageSize, keywords, enabled));
     }
     @PostMapping @Operation(summary = "创建计次场景") @Audit(operationType = OperationType.CREATE, description = "创建计次场景", module = "USAGE_SCENE", response = true)
     public boolean create(@RequestBody UsageScene scene) { return usageSceneService.saveScene(scene); }

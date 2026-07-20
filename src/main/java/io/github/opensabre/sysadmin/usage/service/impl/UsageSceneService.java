@@ -21,8 +21,14 @@ public class UsageSceneService extends ServiceImpl<UsageSceneMapper, UsageScene>
         return getOne(wrapper(type, id, event).last("limit 1"));
     }
     @Override public List<UsageScene> list() { return super.list(); }
-    @Override public IPage<UsageScene> page(long pageNum, long pageSize) {
+    @Override public IPage<UsageScene> page(long pageNum, long pageSize, String keywords, Boolean enabled) {
         return super.page(new Page<>(pageNum, pageSize), new LambdaQueryWrapper<UsageScene>()
+                .and(StringUtils.isNotBlank(keywords), wrapper -> wrapper
+                        .like(UsageScene::getSceneName, keywords)
+                        .or().like(UsageScene::getObjectType, keywords)
+                        .or().like(UsageScene::getObjectId, keywords)
+                        .or().like(UsageScene::getUsageEvent, keywords))
+                .eq(enabled != null, UsageScene::isEnabled, enabled)
                 .orderByDesc(UsageScene::getUpdatedTime));
     }
     @Override public boolean saveScene(UsageScene scene) { return scene != null && get(scene.getObjectType(), scene.getObjectId(), scene.getUsageEvent()) == null && save(scene); }
