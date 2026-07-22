@@ -133,7 +133,7 @@ class GatewayRouteConfigServiceTest {
         client.setIssuerUri("http://authorization:8000");
         client.setClientId("base-gateway-local");
         client.setClientSecret("ENC(ciphertext)");
-        client.setRedirectUri("http://localhost:3000/login/oauth2/code/base-gateway-client");
+        client.setRedirectUri("http://localhost:3000/login/oauth2/code/base-gateway-local");
         client.setScopes(List.of("openid", "profile"));
 
         String updated = GatewayRouteConfigService.replaceOauth2Clients(yaml, List.of(client));
@@ -143,6 +143,8 @@ class GatewayRouteConfigServiceTest {
                 .satisfies(item -> {
                     assertThat(item.getRegistrationId()).isEqualTo("base-gateway-local");
                     assertThat(item.getIssuerUri()).isEqualTo("http://authorization:8000");
+                    assertThat(item.getRedirectUri())
+                            .isEqualTo("http://localhost:3000/login/oauth2/code/base-gateway-local");
                     assertThat(item.getClientSecret()).isEqualTo("ENC(ciphertext)");
                 });
     }
