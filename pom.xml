@@ -46,11 +46,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- 网关 OAuth2 密钥以 ENC(...) 形式发布到 Nacos。 -->
-        <dependency>
-            <groupId>com.github.ulisesbocchio</groupId>
-            <artifactId>jasypt-spring-boot-starter</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.github.opensabre</groupId>
             <artifactId>opensabre-starter-register</artifactId>
