@@ -11,6 +11,7 @@
 - [通知模块](docs/notification.md)
 - [限次模块](docs/ratelimit.md)
 - [字典模块](docs/dict.md)
+- [内部 Token 密钥管理](docs/modules/internal-token-key-management.md)
 
 ## 本地构建
 
