@@ -11,6 +11,7 @@
 | [notification.md](notification.md) | 通知发送、场景/模板/记录管理和发送流程 |
 | [ratelimit.md](ratelimit.md) | 集中式限次检查、动态场景、算法和维度 |
 | [dict.md](dict.md) | 字典类型、字典项和兼容路由 |
+| [内部 Token 密钥管理](modules/internal-token-key-management.md) | 双密钥状态、Nacos 轮换、退役和审计 |
 | [架构与边界](architecture.md) | 应用职责、模块边界和事实源 |
 | [开发与运行](development.md) | 启动、数据初始化与验证 |
 | [模块地图](modules/README.md) | 全部模块的介绍、功能、使用、流程和规划入口 |
