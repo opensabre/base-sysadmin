@@ -33,6 +33,8 @@ opensabre:
       group: ${OPENSABRE_SECURITY_CONFIG_GROUP:DEFAULT_GROUP}
       namespace: ${REGISTER_NAMESPACE:}
       rotation-grace-period: ${INTERNAL_TOKEN_KEY_ROTATION_GRACE_PERIOD:5m}
+  error-catalog:
+    registration-token: ${ERROR_CATALOG_REGISTRATION_TOKEN:}
   sensitive:
     log:
       enabled: false # 日志脱敏开关，默认关闭
