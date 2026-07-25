@@ -1,6 +1,7 @@
 package io.github.opensabre.sysadmin.internaltoken.repository;
 
 import io.github.opensabre.sysadmin.internaltoken.config.InternalTokenKeyManagementProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ public class NacosInternalTokenSharedConfigRepository
     private final InternalTokenKeyManagementProperties properties;
     private final HttpClient httpClient;
 
+    @Autowired
     public NacosInternalTokenSharedConfigRepository(
             InternalTokenKeyManagementProperties properties) {
         this(properties, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
