@@ -1,10 +1,9 @@
 package io.github.opensabre.sysadmin.errorcatalog.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import io.github.opensabre.governance.errorcatalog.ErrorCatalogEntry;
-import io.github.opensabre.governance.errorcatalog.ErrorCatalogSnapshot;
-import io.github.opensabre.governance.errorcatalog.ErrorCatalogScope;
 import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalog;
+import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogRegistrationRequest;
+import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogScope;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -26,8 +25,8 @@ class ErrorCatalogServiceTest {
                 return existing;
             }
         };
-        ErrorCatalogSnapshot snapshot = new ErrorCatalogSnapshot("base-authorization", "0.6.0",
-                List.of(new ErrorCatalogEntry("020000", "请求参数校验不通过", "auth", null, true, false, null)));
+        ErrorCatalogRegistrationRequest snapshot = new ErrorCatalogRegistrationRequest("base-authorization", "0.6.0",
+                List.of(entry("020000", "请求参数校验不通过", "auth", null, null)));
         assertThrows(IllegalArgumentException.class, () -> service.register(snapshot));
     }
 
@@ -42,10 +41,10 @@ class ErrorCatalogServiceTest {
         existing.setModule("framework");
         existing.setPublicVisible(true);
         ErrorCatalogService service = serviceWith(existing);
-        ErrorCatalogEntry common = new ErrorCatalogEntry("-1", "系统异常", "framework",
-                null, true, false, null, "opensabre-framework", ErrorCatalogScope.COMMON);
+        ErrorCatalogRegistrationRequest.Entry common = entry("-1", "系统异常", "framework",
+                "opensabre-framework", ErrorCatalogScope.COMMON);
 
-        assertDoesNotThrow(() -> service.register(new ErrorCatalogSnapshot(
+        assertDoesNotThrow(() -> service.register(new ErrorCatalogRegistrationRequest(
                 "base-authorization", "0.7.0", List.of(common))));
     }
 
@@ -60,11 +59,17 @@ class ErrorCatalogServiceTest {
         existing.setModule("framework");
         existing.setPublicVisible(true);
         ErrorCatalogService service = serviceWith(existing);
-        ErrorCatalogEntry changed = new ErrorCatalogEntry("-1", "未知异常", "framework",
-                null, true, false, null, "opensabre-framework", ErrorCatalogScope.COMMON);
+        ErrorCatalogRegistrationRequest.Entry changed = entry("-1", "未知异常", "framework",
+                "opensabre-framework", ErrorCatalogScope.COMMON);
 
-        assertThrows(IllegalArgumentException.class, () -> service.register(new ErrorCatalogSnapshot(
+        assertThrows(IllegalArgumentException.class, () -> service.register(new ErrorCatalogRegistrationRequest(
                 "base-authorization", "0.7.0", List.of(changed))));
+    }
+
+    private ErrorCatalogRegistrationRequest.Entry entry(String code, String message, String module,
+                                                        String owner, ErrorCatalogScope scope) {
+        return new ErrorCatalogRegistrationRequest.Entry(
+                code, message, module, null, true, false, null, owner, scope);
     }
 
     private ErrorCatalogService serviceWith(ErrorCatalog existing) {

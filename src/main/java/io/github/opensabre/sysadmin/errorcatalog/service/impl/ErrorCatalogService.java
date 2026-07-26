@@ -4,11 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.github.opensabre.governance.errorcatalog.ErrorCatalogEntry;
-import io.github.opensabre.governance.errorcatalog.ErrorCatalogScope;
-import io.github.opensabre.governance.errorcatalog.ErrorCatalogSnapshot;
 import io.github.opensabre.sysadmin.errorcatalog.dao.ErrorCatalogMapper;
 import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalog;
+import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogRegistrationRequest;
+import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogScope;
 import io.github.opensabre.sysadmin.errorcatalog.service.IErrorCatalogService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -21,9 +20,9 @@ import java.util.Objects;
 public class ErrorCatalogService extends ServiceImpl<ErrorCatalogMapper, ErrorCatalog> implements IErrorCatalogService {
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void register(ErrorCatalogSnapshot snapshot) {
-        for (ErrorCatalogEntry entry : snapshot.entries()) {
-            ErrorCatalogEntry resolvedEntry = entry.resolveOwner(snapshot.application());
+    public void register(ErrorCatalogRegistrationRequest snapshot) {
+        for (ErrorCatalogRegistrationRequest.Entry entry : snapshot.entries()) {
+            ErrorCatalogRegistrationRequest.Entry resolvedEntry = entry.resolveOwner(snapshot.application());
             if (resolvedEntry.scope() == ErrorCatalogScope.APPLICATION
                     && !snapshot.application().equals(resolvedEntry.owner())) {
                 throw new IllegalArgumentException("application error code " + resolvedEntry.code()
@@ -58,7 +57,7 @@ public class ErrorCatalogService extends ServiceImpl<ErrorCatalogMapper, ErrorCa
         }
     }
 
-    private boolean sameDefinition(ErrorCatalog current, ErrorCatalogEntry entry) {
+    private boolean sameDefinition(ErrorCatalog current, ErrorCatalogRegistrationRequest.Entry entry) {
         return Objects.equals(current.getDefaultMessage(), entry.message())
                 && Objects.equals(current.getModule(), entry.module())
                 && Objects.equals(current.getHttpStatus(), entry.httpStatus())

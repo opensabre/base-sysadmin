@@ -2,7 +2,6 @@ package io.github.opensabre.sysadmin.errorcatalog.model;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.github.opensabre.persistence.entity.po.BasePo;
-import io.github.opensabre.governance.errorcatalog.ErrorCatalogScope;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
