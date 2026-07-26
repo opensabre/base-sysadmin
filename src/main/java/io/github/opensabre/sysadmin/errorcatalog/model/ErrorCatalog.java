@@ -13,6 +13,8 @@ public class ErrorCatalog extends BasePo {
     private String code;
     private String defaultMessage;
     private String sourceApplication;
+    private String owner;
+    private ErrorCatalogScope scope;
     private String module;
     private String sourceVersion;
     private Integer httpStatus;
