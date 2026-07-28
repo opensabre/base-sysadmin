@@ -1,5 +1,7 @@
 package io.github.opensabre.sysadmin.captcha.rest;
 
+import io.github.opensabre.governance.audit.annotations.Audit;
+import io.github.opensabre.governance.audit.annotations.OperationType;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaSceneService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,12 +47,14 @@ public class CaptchaSceneController {
 
     @PostMapping
     @Operation(summary = "创建验证码场景")
+    @Audit(operationType = OperationType.CREATE, description = "创建验证码场景", module = "CAPTCHA_SCENE", response = true, key = "#scene.sceneCode")
     public boolean create(@Valid @RequestBody CaptchaScene scene) {
         return captchaSceneService.saveScene(scene);
     }
 
     @PutMapping("/{sceneCode}")
     @Operation(summary = "更新验证码场景")
+    @Audit(operationType = OperationType.UPDATE, description = "更新验证码场景", module = "CAPTCHA_SCENE", response = true, key = "#sceneCode")
     public boolean update(@PathVariable String sceneCode, @Valid @RequestBody CaptchaScene scene) {
         scene.setSceneCode(sceneCode);
         return captchaSceneService.updateScene(scene);
@@ -58,6 +62,7 @@ public class CaptchaSceneController {
 
     @DeleteMapping("/{sceneCode}")
     @Operation(summary = "删除验证码场景")
+    @Audit(operationType = OperationType.DELETE, description = "删除验证码场景", module = "CAPTCHA_SCENE", response = true, key = "#sceneCode")
     public boolean delete(@PathVariable String sceneCode) {
         return captchaSceneService.deleteScene(sceneCode);
     }

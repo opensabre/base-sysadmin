@@ -1,5 +1,7 @@
 package io.github.opensabre.sysadmin.dict.rest;
 
+import io.github.opensabre.governance.audit.annotations.Audit;
+import io.github.opensabre.governance.audit.annotations.OperationType;
 import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.model.po.DictType;
 import io.github.opensabre.sysadmin.dict.model.vo.DictItemOption;
@@ -57,18 +59,21 @@ public class DictController {
 
     @PostMapping
     @Operation(summary = "新增字典")
+    @Audit(operationType = OperationType.CREATE, description = "新增字典", module = "DICT", response = true, key = "#dictType.dictCode")
     public boolean create(@Valid @RequestBody DictType dictType) {
         return dictTypeService.saveDict(dictType);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "修改字典")
+    @Audit(operationType = OperationType.UPDATE, description = "修改字典", module = "DICT", response = true, key = "#id")
     public boolean update(@PathVariable String id, @Valid @RequestBody DictType dictType) {
         return dictTypeService.updateDict(id, dictType);
     }
 
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除字典")
+    @Audit(operationType = OperationType.DELETE, description = "删除字典", module = "DICT", response = true, key = "#ids")
     public boolean delete(@PathVariable String ids) {
         return dictTypeService.deleteByIds(ids);
     }
@@ -90,6 +95,7 @@ public class DictController {
 
     @PostMapping("/{dictCode}/items")
     @Operation(summary = "新增字典项")
+    @Audit(operationType = OperationType.CREATE, description = "新增字典项", module = "DICT_ITEM", response = true, key = "#dictCode")
     public boolean createItem(@PathVariable String dictCode, @Valid @RequestBody DictItem item) {
         return dictItemService.saveItem(dictCode, item);
     }
@@ -102,12 +108,14 @@ public class DictController {
 
     @PutMapping("/{dictCode}/items/{id}")
     @Operation(summary = "修改字典项")
+    @Audit(operationType = OperationType.UPDATE, description = "修改字典项", module = "DICT_ITEM", response = true, key = "#id")
     public boolean updateItem(@PathVariable String dictCode, @PathVariable String id, @Valid @RequestBody DictItem item) {
         return dictItemService.updateItem(dictCode, id, item);
     }
 
     @DeleteMapping("/{dictCode}/items/{ids}")
     @Operation(summary = "删除字典项")
+    @Audit(operationType = OperationType.DELETE, description = "删除字典项", module = "DICT_ITEM", response = true, key = "#ids")
     public boolean deleteItems(@PathVariable String dictCode, @PathVariable String ids) {
         return dictItemService.deleteByIds(dictCode, ids);
     }

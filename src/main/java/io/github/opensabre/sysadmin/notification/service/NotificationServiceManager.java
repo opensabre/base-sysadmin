@@ -11,6 +11,8 @@ import io.github.opensabre.sysadmin.notification.model.po.NotificationRecord;
 import io.github.opensabre.sysadmin.notification.model.po.NotificationScene;
 import io.github.opensabre.sysadmin.notification.model.po.NotificationTemplateConfig;
 import io.github.opensabre.sysadmin.notification.model.vo.NotificationSendResponse;
+import io.github.opensabre.sysadmin.usage.enums.UsageOutcome;
+import io.github.opensabre.governance.usage.NotificationUsageRecorder;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +45,9 @@ public class NotificationServiceManager {
 
     @Resource
     private ObjectMapper objectMapper;
+
+    @Resource
+    private NotificationUsageRecorder notificationUsageRecorder;
 
     @Autowired
     public NotificationServiceManager(List<INotificationService> services) {
@@ -144,6 +149,7 @@ public class NotificationServiceManager {
         record.setTemplateContent(renderedContent);
         record.setArgsJson(toJson(args));
         record.setRetryCount(retryCount);
+        recordUsage(template, UsageOutcome.ATTEMPT);
 
         try {
             INotificationService service = notificationServices.get(template.getChannel());
@@ -152,10 +158,12 @@ public class NotificationServiceManager {
             record.setStatus(NotificationSendStatus.SUCCESS);
             record.setFailureReason(null);
             record.setSentTime(LocalDateTime.now());
+            recordUsage(template, UsageOutcome.SUCCESS);
         } catch (Exception e) {
             record.setStatus(NotificationSendStatus.FAILED);
             record.setFailureReason(e.getMessage());
             record.setSentTime(LocalDateTime.now());
+            recordUsage(template, UsageOutcome.FAILURE);
         }
 
         if (existingRecord == null) {
@@ -164,6 +172,19 @@ public class NotificationServiceManager {
             notificationRecordService.updateRecord(record);
         }
         return toResponse(record);
+    }
+
+    private void recordUsage(NotificationTemplateConfig template, UsageOutcome outcome) {
+        if (outcome == UsageOutcome.ATTEMPT) {
+            notificationUsageRecorder.sceneSendAttempt(template.getSceneCode());
+            notificationUsageRecorder.templateSendAttempt(template.getId());
+        } else if (outcome == UsageOutcome.SUCCESS) {
+            notificationUsageRecorder.sceneSendSuccess(template.getSceneCode());
+            notificationUsageRecorder.templateSendSuccess(template.getId());
+        } else {
+            notificationUsageRecorder.sceneSendFailure(template.getSceneCode());
+            notificationUsageRecorder.templateSendFailure(template.getId());
+        }
     }
 
     private NotificationSendResponse toResponse(NotificationRecord record) {

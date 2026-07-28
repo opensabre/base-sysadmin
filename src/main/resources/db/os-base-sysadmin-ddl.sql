@@ -1,5 +1,39 @@
 SET NAMES utf8;
 USE os_base_sysadmin;
+-- 站内信：消息主体与收件人快照。发布时由应用将目标用户名固化为收件人记录。
+CREATE TABLE IF NOT EXISTS `base_sys_internal_message` (
+    `id` varchar(32) NOT NULL COMMENT '主键ID',
+    `kind` varchar(32) NOT NULL COMMENT '消息类型：ANNOUNCEMENT/NOTIFICATION',
+    `title` varchar(255) NOT NULL COMMENT '标题',
+    `content` text NOT NULL COMMENT '富文本内容',
+    `level` varchar(16) NOT NULL DEFAULT 'L' COMMENT '消息等级',
+    `target_scope` varchar(32) NOT NULL COMMENT '目标范围',
+    `target_usernames` text NOT NULL COMMENT '草稿目标用户名快照，逗号分隔',
+    `target_url` varchar(500) DEFAULT NULL COMMENT '站内跳转地址',
+    `status` varchar(32) NOT NULL COMMENT '状态：DRAFT/PUBLISHED/REVOKED',
+    `publish_time` datetime DEFAULT NULL COMMENT '发布时间',
+    `expire_time` datetime DEFAULT NULL COMMENT '到期时间',
+    `created_by` varchar(100) NOT NULL COMMENT '创建人',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` varchar(100) NOT NULL COMMENT '更新人',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_status_publish_time` (`status`, `publish_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='站内信主体表';
+
+CREATE TABLE IF NOT EXISTS `base_sys_internal_message_recipient` (
+    `id` varchar(32) NOT NULL COMMENT '主键ID',
+    `message_id` varchar(32) NOT NULL COMMENT '站内信ID',
+    `username` varchar(100) NOT NULL COMMENT '接收用户名',
+    `read_time` datetime DEFAULT NULL COMMENT '阅读时间',
+    `created_by` varchar(100) NOT NULL COMMENT '创建人',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` varchar(100) NOT NULL COMMENT '更新人',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_message_username` (`message_id`, `username`),
+    KEY `idx_username_read_time` (`username`, `read_time`, `created_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='站内信收件人表';
 -- 审计日志表
 DROP TABLE IF EXISTS base_sys_audit_log;
 CREATE TABLE IF NOT EXISTS `base_sys_audit_log` (
@@ -70,6 +104,25 @@ CREATE TABLE IF NOT EXISTS `base_sys_ratelimit_scene` (
     UNIQUE KEY `uk_scene_code` (`scene_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='限次场景表';
 
+CREATE TABLE IF NOT EXISTS `base_sys_usage_counter_minute` (
+    `id` varchar(32) NOT NULL COMMENT '主键ID',
+    `bucket_start` datetime NOT NULL COMMENT '分钟统计起点',
+    `object_type` varchar(64) NOT NULL COMMENT '对象类型',
+    `object_id` varchar(128) NOT NULL COMMENT '对象ID',
+    `usage_event` varchar(64) NOT NULL COMMENT '使用事件',
+    `attempt_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT '发起次数',
+    `success_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT '成功次数',
+    `failure_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT '失败次数',
+    `created_by` varchar(100) NOT NULL DEFAULT 'system' COMMENT '创建人',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` varchar(100) NOT NULL DEFAULT 'system' COMMENT '更新人',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_bucket_object_event` (`bucket_start`, `object_type`, `object_id`, `usage_event`),
+    KEY `idx_bucket_start` (`bucket_start`),
+    KEY `idx_object_event_bucket` (`object_type`, `object_id`, `usage_event`, `bucket_start`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对象使用分钟计次表';
+
 DROP TABLE IF EXISTS base_sys_notification_record;
 DROP TABLE IF EXISTS base_sys_notification_template;
 DROP TABLE IF EXISTS base_sys_notification_scene;
@@ -129,6 +182,23 @@ CREATE TABLE IF NOT EXISTS `base_sys_notification_record` (
     KEY `idx_scene_channel_status` (`scene_code`, `channel`, `status`),
     KEY `idx_created_time` (`created_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知发送记录表';
+
+CREATE TABLE IF NOT EXISTS `base_sys_usage_scene` (
+    `id` varchar(32) NOT NULL COMMENT '主键ID',
+    `object_type` varchar(64) NOT NULL COMMENT '对象类型',
+    `object_id` varchar(128) NOT NULL COMMENT '对象ID',
+    `usage_event` varchar(64) NOT NULL COMMENT '使用事件',
+    `scene_name` varchar(128) NOT NULL COMMENT '场景名称',
+    `source_app` varchar(64) DEFAULT NULL COMMENT '所属应用',
+    `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否允许计次',
+    `description` varchar(255) DEFAULT NULL COMMENT '描述',
+    `created_by` varchar(100) NOT NULL COMMENT '创建人',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` varchar(100) NOT NULL COMMENT '更新人',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_usage_scene` (`object_type`, `object_id`, `usage_event`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='计次场景登记表';
 
 DROP TABLE IF EXISTS base_sys_dict_item;
 DROP TABLE IF EXISTS base_sys_dict_type;

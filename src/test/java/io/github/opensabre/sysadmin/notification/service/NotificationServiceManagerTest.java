@@ -8,6 +8,7 @@ import io.github.opensabre.sysadmin.notification.model.po.NotificationRecord;
 import io.github.opensabre.sysadmin.notification.model.po.NotificationScene;
 import io.github.opensabre.sysadmin.notification.model.po.NotificationTemplateConfig;
 import io.github.opensabre.sysadmin.notification.model.vo.NotificationSendResponse;
+import io.github.opensabre.governance.usage.NotificationUsageRecorder;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -106,6 +107,7 @@ class NotificationServiceManagerTest {
     private static NotificationServiceManager newManager(INotificationService service) {
         NotificationServiceManager manager = new NotificationServiceManager(List.of(service));
         ReflectionTestUtils.setField(manager, "objectMapper", new ObjectMapper());
+        ReflectionTestUtils.setField(manager, "notificationUsageRecorder", new NotificationUsageRecorder(record -> { }));
         return manager;
     }
 

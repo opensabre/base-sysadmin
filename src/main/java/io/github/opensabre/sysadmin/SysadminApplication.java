@@ -1,9 +1,11 @@
 package io.github.opensabre.sysadmin;
 
 import com.alicp.jetcache.anno.config.EnableMethodCache;
+import io.github.opensabre.governance.audit.annotations.EnabledAudit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@EnabledAudit
 @SpringBootApplication
 @EnableMethodCache(basePackages = {"io.github.opensabre.sysadmin"})
 public class SysadminApplication {

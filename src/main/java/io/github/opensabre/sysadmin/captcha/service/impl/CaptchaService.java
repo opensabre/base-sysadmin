@@ -1,6 +1,5 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
-import io.github.opensabre.sysadmin.captcha.config.CaptchaConfig;
 import io.github.opensabre.sysadmin.captcha.enums.BusinessScenario;
 import io.github.opensabre.sysadmin.captcha.model.po.ClientInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
@@ -10,6 +9,7 @@ import io.github.opensabre.sysadmin.captcha.service.ICaptchaGenerator;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaService;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaStorageService;
 import io.github.opensabre.sysadmin.captcha.service.IRateLimitService;
+import io.github.opensabre.governance.usage.CaptchaUsageRecorder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -33,7 +33,8 @@ public abstract class CaptchaService implements ICaptchaService {
     protected IRateLimitService rateLimitService;
 
     @Autowired
-    protected CaptchaConfig captchaConfig;
+    protected CaptchaUsageRecorder captchaUsageRecorder;
+
 
     public CaptchaService(ICaptchaGenerator captchaGenerator) {
         this.captchaGenerator = captchaGenerator;
@@ -51,34 +52,31 @@ public abstract class CaptchaService implements ICaptchaService {
 
     @Override
     public CaptchaVo generateCaptcha(String businessKey, CaptchaScene scenario, ClientInfo clientInfo) {
-        // Check rate limits for IP
-        if (!rateLimitService.isIpAllowed(clientInfo.clientIp(),
-                captchaConfig.getSecurity().getIp().getMaxAttempts(),
-                captchaConfig.getSecurity().getIp().getTimeWindow())) {
+        // IP、设备和业务标识都由限次场景表维护，便于运行时调整。
+        if (!rateLimitService.isAllowed(IRateLimitService.CAPTCHA_IP_SCENE, clientInfo.clientIp())) {
             throw new RuntimeException("IP rate limit exceeded");
         }
-        // Check rate limits for deviceId
-        if (!rateLimitService.isDeviceAllowed(clientInfo.deviceId(),
-                captchaConfig.getSecurity().getDevice().getMaxAttempts(),
-                captchaConfig.getSecurity().getDevice().getTimeWindow())) {
+        if (!rateLimitService.isAllowed(IRateLimitService.CAPTCHA_DEVICE_SCENE, clientInfo.deviceId())) {
             throw new RuntimeException("Device rate limit exceeded");
         }
-        // Check rate limits for businessId
-        if (!rateLimitService.isBusinessAllowed(clientInfo.businessId(),
-                scenario.getMaxLimitCount(),
-                captchaConfig.getSecurity().getDevice().getTimeWindow())) {
+        if (!rateLimitService.isAllowed(IRateLimitService.captchaBusinessSceneCode(scenario.getSceneCode()),
+                clientInfo.businessId())) {
             throw new RuntimeException("BusinessId rate limit exceeded");
         }
-        // 验证码生成前置逻辑
-        beforeGenerateCaptcha(businessKey, scenario, clientInfo);
-        // Generate the captcha
-        CaptchaInfo captchaInfo = this.captchaGenerator.generate(businessKey, scenario, clientInfo);
-        // 保存到缓存中
-        captchaStorage.save(captchaInfo, scenario);
-        // 验证码处理后续逻辑，返回Vo
-        CaptchaVo captchaVo = afterGenerateCaptcha(captchaInfo);
-        log.info("Captcha generated: businessKey={}, captchaId={}, scenario={}", businessKey, captchaVo.getCaptchaId(), scenario);
-        return captchaVo;
+        captchaUsageRecorder.generateAttempt(scenario.getSceneCode());
+        try {
+            // 验证码生成前置逻辑
+            beforeGenerateCaptcha(businessKey, scenario, clientInfo);
+            CaptchaInfo captchaInfo = this.captchaGenerator.generate(businessKey, scenario, clientInfo);
+            captchaStorage.save(captchaInfo, scenario);
+            CaptchaVo captchaVo = afterGenerateCaptcha(captchaInfo);
+            captchaUsageRecorder.generateSuccess(scenario.getSceneCode());
+            log.info("Captcha generated: businessKey={}, captchaId={}, scenario={}", businessKey, captchaVo.getCaptchaId(), scenario);
+            return captchaVo;
+        } catch (RuntimeException exception) {
+            captchaUsageRecorder.generateFailure(scenario.getSceneCode());
+            throw exception;
+        }
     }
 
     /**
@@ -93,40 +91,43 @@ public abstract class CaptchaService implements ICaptchaService {
 
     @Override
     public boolean validateCaptcha(String captchaId, CaptchaScene scenario, String inputCode) {
-        // 自定义校验
+        captchaUsageRecorder.verifyAttempt(scenario.getSceneCode());
+        try {
+            boolean valid = validateCaptchaInternal(captchaId, scenario, inputCode);
+            if (valid) captchaUsageRecorder.verifySuccess(scenario.getSceneCode());
+            else captchaUsageRecorder.verifyFailure(scenario.getSceneCode());
+            return valid;
+        } catch (RuntimeException exception) {
+            captchaUsageRecorder.verifyFailure(scenario.getSceneCode());
+            throw exception;
+        }
+    }
+
+    private boolean validateCaptchaInternal(String captchaId, CaptchaScene scenario, String inputCode) {
         if (!customValidateCaptcha(captchaId, scenario, inputCode)) {
             return false;
         }
-        // Retrieve captcha from storage
         CaptchaInfo captchaInfo = captchaStorage.get(captchaId, scenario);
-        // 无此 captchaId
         if (captchaInfo == null) {
             log.warn("Captcha not found: captchaId={}, scenario={}", captchaId, scenario);
             return false;
         }
-        // Check if already verified
         if (captchaInfo.isVerified() || LocalDateTime.now().isAfter(captchaInfo.getExpireTime())) {
             log.warn("Captcha already verified or expired: captchaId={}, scenario={}", captchaId, scenario);
-            captchaStorage.delete(captchaId, scenario); // Clean up expired captcha
+            captchaStorage.delete(captchaId, scenario);
             return false;
         }
-        // 超过验证次数
         if (captchaInfo.getAttempts() >= scenario.getCaptchaAttempts()) {
             log.warn("Max attempts exceeded: sceneId={}, scenario={}", captchaId, scenario);
-            captchaStorage.delete(captchaId, scenario); // Clean up after max attempts
+            captchaStorage.delete(captchaId, scenario);
             return false;
         }
-
-        // 比对验证码
         boolean isValid = captchaInfo.getCode().equalsIgnoreCase(inputCode);
-        // 验证码正确，失效验证码，返回true
         if (isValid) {
-            // Mark as verified
             captchaStorage.delete(captchaId, scenario);
             log.info("Captcha validated successfully: captchaId={}, scenario={}", captchaId, scenario);
             return true;
         }
-        // 验证不通过，尝试次数+1
         captchaStorage.incrementAttempts(captchaId, scenario);
         log.warn("Captcha validation failed: captchaId={}, scenario={}, attempts={}", captchaId, scenario, captchaInfo.getAttempts() + 1);
         return false;

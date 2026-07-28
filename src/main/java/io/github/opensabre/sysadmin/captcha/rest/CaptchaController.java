@@ -43,10 +43,11 @@ public class CaptchaController {
                           @Parameter(name = "imageCaptchaId", description = "图形验证码 ID", required = true) @RequestParam String imageCaptchaId,
                           @Parameter(name = "imageCaptchaCode", description = "用户输入的图形验证码", required = true) @RequestParam String imageCaptchaCode,
                           HttpServletRequest request) {
+        CaptchaScene scene = requireScene(scenario.getCode());
         // Get client IP and device info
-        ClientInfo clientInfo = ClientUtils.getClientInfo(request, phoneNo, scenario);
+        ClientInfo clientInfo = ClientUtils.getClientInfo(request, phoneNo, scene);
         // Generate Captcha
-        CaptchaVo captchaVo = smsCaptchaService.generateCaptcha(phoneNo, scenario, clientInfo);
+        CaptchaVo captchaVo = smsCaptchaService.generateCaptcha(phoneNo, scene, clientInfo);
         log.info("Captcha SMS sent: businessKey={}, scenario={}, info={}", phoneNo, scenario, captchaVo);
         return captchaVo;
     }
@@ -58,10 +59,11 @@ public class CaptchaController {
                           @Parameter(name = "imageCaptchaId", description = "图形验证码 ID", required = true) @RequestParam String imageCaptchaId,
                           @Parameter(name = "imageCaptchaCode", description = "用户输入的图形验证码", required = true) @RequestParam String imageCaptchaCode,
                           HttpServletRequest request) {
+        CaptchaScene scene = requireScene(scenario.getCode());
         // Get client IP and device info
-        ClientInfo clientInfo = ClientUtils.getClientInfo(request, email, scenario);
+        ClientInfo clientInfo = ClientUtils.getClientInfo(request, email, scene);
         // Generate Captcha
-        CaptchaVo captchaVo = emailCaptchaService.generateCaptcha(email, scenario, clientInfo);
+        CaptchaVo captchaVo = emailCaptchaService.generateCaptcha(email, scene, clientInfo);
         log.info("Captcha Email sent: businessKey={}, scenario={}, info={}", email, scenario, captchaVo);
         return captchaVo;
     }
@@ -71,10 +73,11 @@ public class CaptchaController {
     public CaptchaVo captchaImage(@Parameter(name = "scenario", description = "业务场景", required = true) @RequestParam BusinessScenario scenario,
                           @Parameter(name = "requestKey", description = "唯一标识（sessionId）", required = true) @RequestParam String requestKey,
                           HttpServletRequest request) {
+        CaptchaScene scene = requireScene(scenario.getCode());
         // Get client IP and device info
-        ClientInfo clientInfo = ClientUtils.getClientInfo(request, requestKey, scenario);
+        ClientInfo clientInfo = ClientUtils.getClientInfo(request, requestKey, scene);
         // Generate Captcha
-        CaptchaVo captchaVo = imageCaptchaService.generateCaptcha(requestKey, scenario, clientInfo);
+        CaptchaVo captchaVo = imageCaptchaService.generateCaptcha(requestKey, scene, clientInfo);
         log.info("Captcha image sent: businessKey={}, scenario={}, info={}", requestKey, scenario, captchaVo);
         return captchaVo;
     }
@@ -96,7 +99,8 @@ public class CaptchaController {
     public boolean verify(@Parameter(name = "scenario", description = "业务场景", required = true) @RequestParam BusinessScenario scenario,
                           @Parameter(name = "captchaId", description = "验证码 id", required = true) @RequestParam @NotBlank(message = "验证码 ID 不能为空") String captchaId,
                           @Parameter(name = "inputCode", description = "验证码", required = true)  @RequestParam @NotBlank(message = "验证码不能为空") String inputCode) {
-        boolean result = smsCaptchaService.validateCaptcha(captchaId, scenario, inputCode);
+        CaptchaScene scene = requireScene(scenario.getCode());
+        boolean result = resolveCaptchaService(scene.getCaptchaType()).validateCaptcha(captchaId, scene, inputCode);
         log.info("Captcha verification result: captchaId={}, inputCode={}, result={}", captchaId, inputCode, result);
         return result;
     }

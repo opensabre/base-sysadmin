@@ -1,5 +1,7 @@
 package io.github.opensabre.sysadmin.notification.rest;
 
+import io.github.opensabre.governance.audit.annotations.Audit;
+import io.github.opensabre.governance.audit.annotations.OperationType;
 import io.github.opensabre.sysadmin.notification.enums.NotificationType;
 import io.github.opensabre.sysadmin.notification.model.po.NotificationTemplateConfig;
 import io.github.opensabre.sysadmin.notification.service.INotificationTemplateConfigService;
@@ -43,18 +45,21 @@ public class NotificationTemplateController {
 
     @PostMapping
     @Operation(summary = "创建通知模板")
+    @Audit(operationType = OperationType.CREATE, description = "创建通知模板", module = "NOTIFICATION_TEMPLATE", response = true, key = "#template.sceneCode")
     public boolean create(@Valid @RequestBody NotificationTemplateConfig template) {
         return notificationTemplateConfigService.saveTemplate(template);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新通知模板")
+    @Audit(operationType = OperationType.UPDATE, description = "更新通知模板", module = "NOTIFICATION_TEMPLATE", response = true, key = "#id")
     public boolean update(@PathVariable String id, @Valid @RequestBody NotificationTemplateConfig template) {
         return notificationTemplateConfigService.updateTemplate(id, template);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除通知模板")
+    @Audit(operationType = OperationType.DELETE, description = "删除通知模板", module = "NOTIFICATION_TEMPLATE", response = true, key = "#id")
     public boolean delete(@PathVariable String id) {
         return notificationTemplateConfigService.deleteTemplate(id);
     }

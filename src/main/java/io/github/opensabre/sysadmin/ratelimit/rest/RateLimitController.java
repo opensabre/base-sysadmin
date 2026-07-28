@@ -10,6 +10,7 @@ import io.github.opensabre.sysadmin.ratelimit.model.form.RateLimitCheckForm;
 import io.github.opensabre.sysadmin.ratelimit.model.vo.RateLimitCheckVo;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitService;
+import io.github.opensabre.governance.usage.RateLimitUsageRecorder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -33,12 +34,30 @@ public class RateLimitController {
     @Resource
     private IRateLimitSceneService rateLimitSceneService;
 
+    @Resource
+    private RateLimitUsageRecorder rateLimitUsageRecorder;
+
     @PostMapping("/check")
     @Operation(summary = "检查限次", description = "供 opensabre-framework starter 远程调用")
     public RateLimitCheckVo check(@RequestBody RateLimitCheckForm form) {
         RateLimitConfig config = buildConfig(form);
-        RateLimitResult result = rateLimitService.checkLimit(config);
-        return RateLimitCheckVo.from(result);
+        boolean hasScene = StringUtils.isNotBlank(form.getSceneCode());
+        if (hasScene) {
+            rateLimitUsageRecorder.checkAttempt(form.getSceneCode());
+        }
+        try {
+            RateLimitResult result = rateLimitService.checkLimit(config);
+            if (hasScene) {
+                if (result.isAllowed()) rateLimitUsageRecorder.allowed(form.getSceneCode());
+                else rateLimitUsageRecorder.rejected(form.getSceneCode());
+            }
+            return RateLimitCheckVo.from(result);
+        } catch (RuntimeException exception) {
+            if (hasScene) {
+                rateLimitUsageRecorder.rejected(form.getSceneCode());
+            }
+            throw exception;
+        }
     }
 
     private RateLimitConfig buildConfig(RateLimitCheckForm form) {
