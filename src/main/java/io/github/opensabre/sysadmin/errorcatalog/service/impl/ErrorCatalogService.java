@@ -18,17 +18,25 @@ import java.util.Objects;
 /** Persists application snapshots and rejects ownership conflicts deterministically. */
 @Service
 public class ErrorCatalogService extends ServiceImpl<ErrorCatalogMapper, ErrorCatalog> implements IErrorCatalogService {
+
+    private static final String FRAMEWORK_OWNER = "opensabre-framework";
+    private static final String SYSADMIN_APPLICATION = "base-sysadmin";
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void register(ErrorCatalogRegistrationRequest snapshot) {
         for (ErrorCatalogRegistrationRequest.Entry entry : snapshot.entries()) {
-            ErrorCatalogRegistrationRequest.Entry resolvedEntry = entry.resolveOwner(snapshot.application());
+            ErrorCatalog current = getOne(new LambdaQueryWrapper<ErrorCatalog>()
+                    .eq(ErrorCatalog::getCode, entry.code())
+                    .last("limit 1"));
+            ErrorCatalogRegistrationRequest.Entry resolvedEntry = resolveOwnership(
+                    snapshot.application(), entry, current);
+            validateCommonOwnership(snapshot.application(), resolvedEntry, current);
             if (resolvedEntry.scope() == ErrorCatalogScope.APPLICATION
                     && !snapshot.application().equals(resolvedEntry.owner())) {
                 throw new IllegalArgumentException("application error code " + resolvedEntry.code()
                         + " can only be reported by " + resolvedEntry.owner());
             }
-            ErrorCatalog current = getOne(new LambdaQueryWrapper<ErrorCatalog>().eq(ErrorCatalog::getCode, entry.code()).last("limit 1"));
             if (current != null) {
                 String currentOwner = StringUtils.defaultIfBlank(current.getOwner(), current.getSourceApplication());
                 ErrorCatalogScope currentScope = current.getScope() == null
@@ -55,6 +63,41 @@ public class ErrorCatalogService extends ServiceImpl<ErrorCatalogMapper, ErrorCa
             catalog.setDescription(resolvedEntry.description());
             if (current == null) save(catalog); else updateById(catalog);
         }
+    }
+
+    private void validateCommonOwnership(
+            String application,
+            ErrorCatalogRegistrationRequest.Entry entry,
+            ErrorCatalog current) {
+        if (entry.scope() != ErrorCatalogScope.COMMON) {
+            return;
+        }
+        if (!FRAMEWORK_OWNER.equals(entry.owner())) {
+            throw new IllegalArgumentException("common error code " + entry.code()
+                    + " must be owned by " + FRAMEWORK_OWNER);
+        }
+        if (current == null && !SYSADMIN_APPLICATION.equals(application)) {
+            throw new IllegalArgumentException("new common error code " + entry.code()
+                    + " can only be registered by " + SYSADMIN_APPLICATION);
+        }
+    }
+
+    private ErrorCatalogRegistrationRequest.Entry resolveOwnership(
+            String application,
+            ErrorCatalogRegistrationRequest.Entry entry,
+            ErrorCatalog current) {
+        if (current == null || StringUtils.isNotBlank(entry.owner()) || entry.scope() != null) {
+            return entry.resolveOwner(application);
+        }
+        ErrorCatalogScope currentScope = current.getScope() == null
+                ? ErrorCatalogScope.APPLICATION : current.getScope();
+        if (currentScope != ErrorCatalogScope.COMMON) {
+            return entry.resolveOwner(application);
+        }
+        // Framework 0.7 未携带归属字段；已有公共定义沿用服务端可信归属。
+        String currentOwner = StringUtils.defaultIfBlank(
+                current.getOwner(), current.getSourceApplication());
+        return entry.resolveOwner(currentOwner, ErrorCatalogScope.COMMON);
     }
 
     private boolean sameDefinition(ErrorCatalog current, ErrorCatalogRegistrationRequest.Entry entry) {
