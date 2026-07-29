@@ -10,6 +10,7 @@ import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogRegistrationR
 import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogScope;
 import io.github.opensabre.sysadmin.errorcatalog.service.IErrorCatalogService;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,66 +21,87 @@ import java.util.Objects;
 public class ErrorCatalogService extends ServiceImpl<ErrorCatalogMapper, ErrorCatalog> implements IErrorCatalogService {
 
     private static final String FRAMEWORK_OWNER = "opensabre-framework";
-    private static final String SYSADMIN_APPLICATION = "base-sysadmin";
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void register(ErrorCatalogRegistrationRequest snapshot) {
         for (ErrorCatalogRegistrationRequest.Entry entry : snapshot.entries()) {
-            ErrorCatalog current = getOne(new LambdaQueryWrapper<ErrorCatalog>()
-                    .eq(ErrorCatalog::getCode, entry.code())
-                    .last("limit 1"));
+            ErrorCatalog current = findByCode(entry.code());
             ErrorCatalogRegistrationRequest.Entry resolvedEntry = resolveOwnership(
                     snapshot.application(), entry, current);
-            validateCommonOwnership(snapshot.application(), resolvedEntry, current);
-            if (resolvedEntry.scope() == ErrorCatalogScope.APPLICATION
-                    && !snapshot.application().equals(resolvedEntry.owner())) {
-                throw new IllegalArgumentException("application error code " + resolvedEntry.code()
-                        + " can only be reported by " + resolvedEntry.owner());
-            }
+            validateRegistration(snapshot.application(), resolvedEntry, current);
+            ErrorCatalog catalog = toCatalog(snapshot, resolvedEntry, current);
             if (current != null) {
-                String currentOwner = StringUtils.defaultIfBlank(current.getOwner(), current.getSourceApplication());
-                ErrorCatalogScope currentScope = current.getScope() == null
-                        ? ErrorCatalogScope.APPLICATION : current.getScope();
-                if (!resolvedEntry.owner().equals(currentOwner) || resolvedEntry.scope() != currentScope) {
-                    throw new IllegalArgumentException("error code " + entry.code() + " is already owned by " + currentOwner);
-                }
-                if (!sameDefinition(current, resolvedEntry)) {
-                    throw new IllegalArgumentException("error code " + entry.code()
-                            + " conflicts with the definition owned by " + currentOwner);
-                }
+                updateById(catalog);
+                continue;
             }
-            ErrorCatalog catalog = current == null ? new ErrorCatalog() : current;
-            catalog.setCode(resolvedEntry.code());
-            catalog.setDefaultMessage(resolvedEntry.message());
-            catalog.setSourceApplication(snapshot.application());
-            catalog.setOwner(resolvedEntry.owner());
-            catalog.setScope(resolvedEntry.scope());
-            catalog.setModule(resolvedEntry.module());
-            catalog.setSourceVersion(snapshot.version());
-            catalog.setHttpStatus(resolvedEntry.httpStatus());
-            catalog.setPublicVisible(resolvedEntry.publicVisible());
-            catalog.setDeprecated(resolvedEntry.deprecated());
-            catalog.setDescription(resolvedEntry.description());
-            if (current == null) save(catalog); else updateById(catalog);
+            try {
+                save(catalog);
+            } catch (DuplicateKeyException duplicate) {
+                // Another instance registered the same code after our lookup. Re-read the winner
+                // and apply the same ownership/definition rules instead of leaking a DB race.
+                ErrorCatalog concurrent = findByCode(entry.code());
+                if (concurrent == null) {
+                    throw duplicate;
+                }
+                ErrorCatalogRegistrationRequest.Entry concurrentEntry =
+                        resolveOwnership(snapshot.application(), entry, concurrent);
+                validateRegistration(snapshot.application(), concurrentEntry, concurrent);
+                updateById(toCatalog(snapshot, concurrentEntry, concurrent));
+            }
         }
     }
 
-    private void validateCommonOwnership(
-            String application,
-            ErrorCatalogRegistrationRequest.Entry entry,
-            ErrorCatalog current) {
+    private void validateRegistration(String application,
+                                      ErrorCatalogRegistrationRequest.Entry entry,
+                                      ErrorCatalog current) {
         if (entry.scope() != ErrorCatalogScope.COMMON) {
-            return;
-        }
-        if (!FRAMEWORK_OWNER.equals(entry.owner())) {
+            if (!application.equals(entry.owner())) {
+                throw new IllegalArgumentException("application error code " + entry.code()
+                        + " can only be reported by " + entry.owner());
+            }
+        } else if (!FRAMEWORK_OWNER.equals(entry.owner())) {
             throw new IllegalArgumentException("common error code " + entry.code()
                     + " must be owned by " + FRAMEWORK_OWNER);
         }
-        if (current == null && !SYSADMIN_APPLICATION.equals(application)) {
-            throw new IllegalArgumentException("new common error code " + entry.code()
-                    + " can only be registered by " + SYSADMIN_APPLICATION);
+        if (current == null) {
+            return;
         }
+        String currentOwner = StringUtils.defaultIfBlank(
+                current.getOwner(), current.getSourceApplication());
+        ErrorCatalogScope currentScope = current.getScope() == null
+                ? ErrorCatalogScope.APPLICATION : current.getScope();
+        if (!entry.owner().equals(currentOwner) || entry.scope() != currentScope) {
+            throw new IllegalArgumentException("error code " + entry.code()
+                    + " is already owned by " + currentOwner);
+        }
+        if (!sameDefinition(current, entry)) {
+            throw new IllegalArgumentException("error code " + entry.code()
+                    + " conflicts with the definition owned by " + currentOwner);
+        }
+    }
+
+    private ErrorCatalog findByCode(String code) {
+        return getOne(new LambdaQueryWrapper<ErrorCatalog>()
+                .eq(ErrorCatalog::getCode, code)
+                .last("limit 1"));
+    }
+
+    private ErrorCatalog toCatalog(ErrorCatalogRegistrationRequest snapshot,
+                                   ErrorCatalogRegistrationRequest.Entry entry,
+                                   ErrorCatalog current) {
+        ErrorCatalog catalog = current == null ? new ErrorCatalog() : current;
+        catalog.setCode(entry.code());
+        catalog.setDefaultMessage(entry.message());
+        catalog.setSourceApplication(snapshot.application());
+        catalog.setOwner(entry.owner());
+        catalog.setScope(entry.scope());
+        catalog.setModule(entry.module());
+        catalog.setSourceVersion(snapshot.version());
+        catalog.setHttpStatus(entry.httpStatus());
+        catalog.setPublicVisible(entry.publicVisible());
+        catalog.setDeprecated(entry.deprecated());
+        catalog.setDescription(entry.description());
+        return catalog;
     }
 
     private ErrorCatalogRegistrationRequest.Entry resolveOwnership(

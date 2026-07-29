@@ -3,8 +3,6 @@ CREATE TABLE IF NOT EXISTS `base_sys_error_catalog` (
     `code` varchar(64) NOT NULL COMMENT '全局错误码',
     `default_message` varchar(500) NOT NULL COMMENT '默认文案',
     `source_application` varchar(128) NOT NULL COMMENT '声明应用',
-    `owner` varchar(128) NOT NULL COMMENT '错误码定义归属',
-    `scope` varchar(32) NOT NULL DEFAULT 'APPLICATION' COMMENT 'COMMON或APPLICATION',
     `module` varchar(128) NOT NULL COMMENT '所属模块',
     `source_version` varchar(64) DEFAULT NULL COMMENT '声明版本',
     `http_status` int DEFAULT NULL COMMENT 'HTTP状态码',

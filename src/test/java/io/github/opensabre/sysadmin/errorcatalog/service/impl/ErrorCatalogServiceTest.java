@@ -5,9 +5,12 @@ import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalog;
 import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogRegistrationRequest;
 import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogScope;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -97,15 +100,49 @@ class ErrorCatalogServiceTest {
     }
 
     @Test
-    void rejectsNewFrameworkCommonDefinitionFromBusinessApplication() {
+    void acceptsNewFrameworkCommonDefinitionFromTrustedApplicationSnapshot() {
         ErrorCatalogService service = serviceWith(null);
         ErrorCatalogRegistrationRequest.Entry common = entry(
                 "-99", "框架错误", "framework",
                 "opensabre-framework", ErrorCatalogScope.COMMON);
 
-        assertThrows(IllegalArgumentException.class, () -> service.register(
+        assertDoesNotThrow(() -> service.register(
                 new ErrorCatalogRegistrationRequest(
                         "base-authorization", "0.7.0", List.of(common))));
+    }
+
+    @Test
+    void rereadsConcurrentWinnerAndRejectsDifferentOwnerDeterministically() {
+        ErrorCatalog winner = new ErrorCatalog();
+        winner.setCode("020000");
+        winner.setDefaultMessage("组织错误");
+        winner.setSourceApplication("base-organization");
+        winner.setOwner("base-organization");
+        winner.setScope(ErrorCatalogScope.APPLICATION);
+        winner.setModule("organization");
+        winner.setPublicVisible(true);
+        AtomicInteger lookups = new AtomicInteger();
+        ErrorCatalogService service = new ErrorCatalogService() {
+            @Override
+            public ErrorCatalog getOne(Wrapper<ErrorCatalog> queryWrapper) {
+                return lookups.getAndIncrement() == 0 ? null : winner;
+            }
+
+            @Override
+            public boolean save(ErrorCatalog entity) {
+                throw new DuplicateKeyException("concurrent insert");
+            }
+        };
+        ErrorCatalogRegistrationRequest.Entry contender = entry(
+                "020000", "认证错误", "authorization",
+                "base-authorization", ErrorCatalogScope.APPLICATION);
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> service.register(new ErrorCatalogRegistrationRequest(
+                        "base-authorization", "0.7.0", List.of(contender))));
+
+        assertEquals("error code 020000 is already owned by base-organization",
+                failure.getMessage());
     }
 
     private ErrorCatalogRegistrationRequest.Entry entry(String code, String message, String module,
@@ -123,6 +160,11 @@ class ErrorCatalogServiceTest {
 
             @Override
             public boolean updateById(ErrorCatalog entity) {
+                return true;
+            }
+
+            @Override
+            public boolean save(ErrorCatalog entity) {
                 return true;
             }
         };
