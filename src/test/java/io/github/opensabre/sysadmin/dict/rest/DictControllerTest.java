@@ -5,15 +5,15 @@ import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.service.IDictItemService;
 import io.github.opensabre.sysadmin.dict.service.IDictTypeService;
 import io.github.opensabre.sysadmin.dict.service.IDictionaryRegistrationService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -24,12 +24,14 @@ class DictControllerTest {
     private DictController controller;
     private IDictionaryRegistrationService registrationService;
     private IDictItemService itemService;
+    private HttpServletResponse response;
 
     @BeforeEach
     void setUp() {
         controller = new DictController();
         registrationService = mock(IDictionaryRegistrationService.class);
         itemService = mock(IDictItemService.class);
+        response = mock(HttpServletResponse.class);
         ReflectionTestUtils.setField(controller, "dictTypeService", mock(IDictTypeService.class));
         ReflectionTestUtils.setField(controller, "dictItemService", itemService);
         ReflectionTestUtils.setField(controller, "dictionaryRegistrationService", registrationService);
@@ -41,7 +43,7 @@ class DictControllerTest {
         DictionaryRegistrationRequest snapshot =
                 new DictionaryRegistrationRequest("base-demo", List.of());
 
-        controller.registerSnapshot(snapshot, "registration-secret");
+        controller.registerSnapshot(snapshot, "registration-secret", response);
 
         verify(registrationService).register(snapshot);
     }
@@ -51,9 +53,9 @@ class DictControllerTest {
         DictionaryRegistrationRequest snapshot =
                 new DictionaryRegistrationRequest("base-demo", List.of());
 
-        assertThrows(ResponseStatusException.class,
-                () -> controller.registerSnapshot(snapshot, "wrong-secret"));
+        assertTrue(controller.registerSnapshot(snapshot, "wrong-secret", response).isFail());
 
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         verify(registrationService, never()).register(snapshot);
     }
 
