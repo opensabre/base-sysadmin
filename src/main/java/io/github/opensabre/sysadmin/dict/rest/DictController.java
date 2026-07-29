@@ -2,6 +2,8 @@ package io.github.opensabre.sysadmin.dict.rest;
 
 import io.github.opensabre.governance.audit.annotations.Audit;
 import io.github.opensabre.governance.audit.annotations.OperationType;
+import io.github.opensabre.common.core.entity.vo.Result;
+import io.github.opensabre.sysadmin.dict.model.DictionaryRegistrationRequest;
 import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.model.po.DictType;
 import io.github.opensabre.sysadmin.dict.model.vo.DictItemOption;
@@ -9,10 +11,14 @@ import io.github.opensabre.sysadmin.dict.model.vo.OptionItem;
 import io.github.opensabre.sysadmin.dict.model.vo.PageData;
 import io.github.opensabre.sysadmin.dict.service.IDictItemService;
 import io.github.opensabre.sysadmin.dict.service.IDictTypeService;
+import io.github.opensabre.sysadmin.dict.service.IDictionaryRegistrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,9 +26,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 
 @Tag(name = "字典管理")
@@ -35,6 +45,28 @@ public class DictController {
 
     @Resource
     private IDictItemService dictItemService;
+
+    @Resource
+    private IDictionaryRegistrationService dictionaryRegistrationService;
+
+    @Value("${opensabre.governance.dictionary.registration-token:}")
+    private String dictionaryRegistrationToken;
+
+    /**
+     * 接收 Framework 上报的应用完整字典快照。
+     */
+    @PostMapping("/snapshots")
+    @Operation(summary = "注册应用字典完整快照")
+    public Result<Boolean> registerSnapshot(
+            @RequestBody DictionaryRegistrationRequest snapshot,
+            @RequestHeader("X-Opensabre-Dictionary-Token") String token) {
+        if (!validRegistrationToken(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "invalid dictionary registration token");
+        }
+        dictionaryRegistrationService.register(snapshot);
+        return Result.success(true);
+    }
 
     @GetMapping
     @Operation(summary = "字典分页列表")
@@ -93,6 +125,15 @@ public class DictController {
         return dictItemService.listOptions(dictCode);
     }
 
+    /**
+     * 返回完整字典项，包含停用项，供 Framework 缓存及历史值回显。
+     */
+    @GetMapping("/{dictCode}/items/all")
+    @Operation(summary = "完整字典项列表")
+    public List<DictItem> allItems(@PathVariable String dictCode) {
+        return dictItemService.listAll(dictCode);
+    }
+
     @PostMapping("/{dictCode}/items")
     @Operation(summary = "新增字典项")
     @Audit(operationType = OperationType.CREATE, description = "新增字典项", module = "DICT_ITEM", response = true, key = "#dictCode")
@@ -118,5 +159,14 @@ public class DictController {
     @Audit(operationType = OperationType.DELETE, description = "删除字典项", module = "DICT_ITEM", response = true, key = "#ids")
     public boolean deleteItems(@PathVariable String dictCode, @PathVariable String ids) {
         return dictItemService.deleteByIds(dictCode, ids);
+    }
+
+    private boolean validRegistrationToken(String token) {
+        if (StringUtils.isAnyBlank(dictionaryRegistrationToken, token)) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                dictionaryRegistrationToken.getBytes(StandardCharsets.UTF_8),
+                token.getBytes(StandardCharsets.UTF_8));
     }
 }

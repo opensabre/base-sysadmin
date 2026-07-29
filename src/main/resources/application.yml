@@ -25,6 +25,9 @@ spring:
       maximum-pool-size: 20
 # opensabre framework配置
 opensabre:
+  governance:
+    dictionary:
+      registration-token: ${DICTIONARY_REGISTRATION_TOKEN:${ERROR_CATALOG_REGISTRATION_TOKEN:}}
   sysadmin:
     internal-token:
       write-enabled: ${INTERNAL_TOKEN_KEY_WRITE_ENABLED:false}

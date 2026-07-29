@@ -23,6 +23,11 @@ public class DictType extends BasePo {
 
     private String dictCode;
 
+    /**
+     * 注册该字典定义的应用；为空表示由管理员维护的存量字典。
+     */
+    private String sourceApplication;
+
     private Integer status;
 
     private String remark;

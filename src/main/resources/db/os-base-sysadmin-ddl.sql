@@ -206,6 +206,7 @@ CREATE TABLE IF NOT EXISTS `base_sys_dict_type` (
     `id` varchar(32) NOT NULL COMMENT '主键ID',
     `name` varchar(128) NOT NULL COMMENT '字典名称',
     `dict_code` varchar(64) NOT NULL COMMENT '字典编码',
+    `source_application` varchar(128) DEFAULT NULL COMMENT '字典定义所属应用，空值表示管理员维护',
     `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态(1:启用;0:禁用)',
     `remark` varchar(255) DEFAULT NULL COMMENT '备注',
     `created_by` varchar(100) NOT NULL COMMENT '创建人',
@@ -214,6 +215,7 @@ CREATE TABLE IF NOT EXISTS `base_sys_dict_type` (
     `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_dict_code` (`dict_code`),
+    KEY `idx_dict_source_application` (`source_application`),
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典类型表';
 

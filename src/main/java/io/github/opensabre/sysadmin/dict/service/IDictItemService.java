@@ -13,6 +13,11 @@ public interface IDictItemService extends IService<DictItem> {
 
     List<DictItemOption> listOptions(String dictCode);
 
+    /**
+     * 查询完整字典项，包含停用项。
+     */
+    List<DictItem> listAll(String dictCode);
+
     DictItem getFormData(String dictCode, String id);
 
     boolean saveItem(String dictCode, DictItem item);
