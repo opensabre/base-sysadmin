@@ -15,10 +15,10 @@ import io.github.opensabre.sysadmin.dict.service.IDictionaryRegistrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -59,10 +58,12 @@ public class DictController {
     @Operation(summary = "注册应用字典完整快照")
     public Result<Boolean> registerSnapshot(
             @RequestBody DictionaryRegistrationRequest snapshot,
-            @RequestHeader("X-Opensabre-Dictionary-Token") String token) {
+            @RequestHeader("X-Opensabre-Dictionary-Token") String token,
+            HttpServletResponse response) {
         if (!validRegistrationToken(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "invalid dictionary registration token");
+            // 全局异常处理会将安全异常改写为 500，因此在此直接返回 401。
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return Result.fail("invalid dictionary registration token");
         }
         dictionaryRegistrationService.register(snapshot);
         return Result.success(true);
