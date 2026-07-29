@@ -42,6 +42,16 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
     }
 
     @Override
+    public List<DictItem> listAll(String dictCode) {
+        if (StringUtils.isBlank(dictCode)) {
+            return List.of();
+        }
+        return this.list(baseQuery(dictCode, null)
+                .orderByAsc(DictItem::getSort)
+                .orderByAsc(DictItem::getId));
+    }
+
+    @Override
     public DictItem getFormData(String dictCode, String id) {
         if (StringUtils.isAnyBlank(dictCode, id)) {
             return null;
