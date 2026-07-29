@@ -49,6 +49,24 @@ class ErrorCatalogServiceTest {
     }
 
     @Test
+    void acceptsLegacyFrameworkCommonDefinitionWithoutOwnershipFields() {
+        ErrorCatalog existing = new ErrorCatalog();
+        existing.setCode("-1");
+        existing.setDefaultMessage("系统异常");
+        existing.setSourceApplication("base-sysadmin");
+        existing.setOwner("opensabre-framework");
+        existing.setScope(ErrorCatalogScope.COMMON);
+        existing.setModule("framework");
+        existing.setPublicVisible(true);
+        ErrorCatalogService service = serviceWith(existing);
+        ErrorCatalogRegistrationRequest.Entry legacyFrameworkEntry =
+                entry("-1", "系统异常", "framework", null, null);
+
+        assertDoesNotThrow(() -> service.register(new ErrorCatalogRegistrationRequest(
+                "base-authorization", "0.7.0", List.of(legacyFrameworkEntry))));
+    }
+
+    @Test
     void rejectsChangedCommonDefinition() {
         ErrorCatalog existing = new ErrorCatalog();
         existing.setCode("-1");
@@ -64,6 +82,30 @@ class ErrorCatalogServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> service.register(new ErrorCatalogRegistrationRequest(
                 "base-authorization", "0.7.0", List.of(changed))));
+    }
+
+    @Test
+    void rejectsApplicationOwnedCommonDefinition() {
+        ErrorCatalogService service = serviceWith(null);
+        ErrorCatalogRegistrationRequest.Entry common = entry(
+                "020001", "认证失败", "authorization",
+                "base-authorization", ErrorCatalogScope.COMMON);
+
+        assertThrows(IllegalArgumentException.class, () -> service.register(
+                new ErrorCatalogRegistrationRequest(
+                        "base-authorization", "0.7.0", List.of(common))));
+    }
+
+    @Test
+    void rejectsNewFrameworkCommonDefinitionFromBusinessApplication() {
+        ErrorCatalogService service = serviceWith(null);
+        ErrorCatalogRegistrationRequest.Entry common = entry(
+                "-99", "框架错误", "framework",
+                "opensabre-framework", ErrorCatalogScope.COMMON);
+
+        assertThrows(IllegalArgumentException.class, () -> service.register(
+                new ErrorCatalogRegistrationRequest(
+                        "base-authorization", "0.7.0", List.of(common))));
     }
 
     private ErrorCatalogRegistrationRequest.Entry entry(String code, String message, String module,

@@ -24,8 +24,15 @@ public record ErrorCatalogRegistrationRequest(
     ) {
         /** Resolves ownership omitted by legacy framework clients. */
         public Entry resolveOwner(String application) {
-            String resolvedOwner = StringUtils.defaultIfBlank(owner, application);
-            ErrorCatalogScope resolvedScope = scope == null ? ErrorCatalogScope.APPLICATION : scope;
+            return resolveOwner(application, ErrorCatalogScope.APPLICATION);
+        }
+
+        /**
+         * Resolves omitted ownership using a known existing definition.
+         */
+        public Entry resolveOwner(String defaultOwner, ErrorCatalogScope defaultScope) {
+            String resolvedOwner = StringUtils.defaultIfBlank(owner, defaultOwner);
+            ErrorCatalogScope resolvedScope = scope == null ? defaultScope : scope;
             return new Entry(code, message, module, httpStatus, publicVisible, deprecated,
                     description, resolvedOwner, resolvedScope);
         }
