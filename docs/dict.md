@@ -79,3 +79,14 @@
 - `gender`
 - `notice_level`
 - `notice_type`
+
+## 0.7.0 治理协议边界
+
+Framework 0.7 的 `DictionaryService` 约定 `POST /dicts/snapshots` 和 `GET /dicts/{dictCode}/items/all`。当前发布分支的 `DictController` 尚未实现这两个端点，只提供本页列出的 CRUD、分页和 options API。
+
+因此在后端契约补齐前：
+
+- 应用保持 `opensabre.governance.dictionary.registration-enabled=false`；
+- 不把 Framework 的字典预热/读取链路视为已端到端交付；
+- 前端继续使用 `/v1/dicts` 的现有管理和 options 接口。
+跟踪 Issue：[https://github.com/opensabre/base-sysadmin/issues/10](https://github.com/opensabre/base-sysadmin/issues/10)

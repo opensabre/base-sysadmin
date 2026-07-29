@@ -7,6 +7,7 @@
 | 审计日志 | 已有 [audit.md](../audit.md)，后续补充独立流程和规划章节。 |
 | 验证码 | 已有 [captcha.md](../captcha.md)，覆盖发送、校验与 Redis 存储。 |
 | 字典 | 已有 [dict.md](../dict.md)，覆盖类型、字典项和兼容路由。 |
+| 错误码目录 | [快照注册、归属规则、查询和排障](error-catalog.md)。 |
 | 通知 | 已有 [notification.md](../notification.md)，覆盖场景、模板、记录和渠道。 |
 | 限流 | 已有 [ratelimit.md](../ratelimit.md)，覆盖动态场景、算法和维度。 |
 | 站内信 | 管理公告、通知、收件人状态与未读计数；设计事实见仓库根 `DESIGN.md` 的相关章节。 |
