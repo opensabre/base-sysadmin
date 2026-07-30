@@ -6,6 +6,7 @@ import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalog;
 import io.github.opensabre.sysadmin.errorcatalog.model.ErrorCatalogRegistrationRequest;
 import io.github.opensabre.sysadmin.errorcatalog.service.IErrorCatalogService;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,11 +24,13 @@ public class ErrorCatalogController {
     @Value("${opensabre.error-catalog.registration-token:}") private String registrationToken;
     @PostMapping("/snapshots")
     public Result<Boolean> register(@RequestBody ErrorCatalogRegistrationRequest snapshot,
-                                    @RequestHeader("X-Opensabre-Error-Catalog-Token") String token) {
+                                    @RequestHeader("X-Opensabre-Error-Catalog-Token") String token,
+                                    HttpServletResponse response) {
         if (registrationToken.isBlank() || !java.security.MessageDigest.isEqual(
                 registrationToken.getBytes(java.nio.charset.StandardCharsets.UTF_8),
                 token.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
-            throw new SecurityException("invalid error catalog registration token");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return Result.fail("invalid error catalog registration token");
         }
         errorCatalogService.register(snapshot);
         return Result.success(true);
