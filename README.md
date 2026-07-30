@@ -26,3 +26,8 @@ mvn spring-boot:run
 ```
 
 默认端口为 `8020`，可通过 `SERVER_PORT` 覆盖。
+
+## 分支策略
+
+`main` 是默认开发与镜像发布主干。功能分支通过 Pull Request 合入 `main`，
+发布流水线仅响应 `main` 和版本标签。
