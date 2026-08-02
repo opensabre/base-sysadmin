@@ -80,11 +80,12 @@
 opensabre:
   governance:
     dictionary:
-      registration-token: ${DICTIONARY_REGISTRATION_TOKEN:${ERROR_CATALOG_REGISTRATION_TOKEN:}}
+      registration-token: ${DICTIONARY_REGISTRATION_TOKEN:${GOVERNANCE_REGISTRATION_TOKEN:${ERROR_CATALOG_REGISTRATION_TOKEN:}}}
 ```
 
-生产环境应设置独立的 `DICTIONARY_REGISTRATION_TOKEN`。服务端使用常量时间比较，
-且不会在日志、响应或审计中输出凭据。未配置凭据时注册接口默认拒绝请求。
+字典与错误码注册默认共享 `GOVERNANCE_REGISTRATION_TOKEN`。如需能力级隔离，可用
+`DICTIONARY_REGISTRATION_TOKEN` 单独覆盖；`ERROR_CATALOG_REGISTRATION_TOKEN` 保留为旧部署兼容回退。
+服务端使用常量时间比较，且不会在日志、响应或审计中输出凭据。未配置凭据时注册接口默认拒绝请求。
 
 `dictCode` 的首次定义归注册应用所有。管理员维护的存量字典不会被应用自动接管，
 其他应用也不能覆盖已有归属。同一快照出现重复 `dictCode` 或重复字典项值会整批拒绝。
@@ -106,13 +107,8 @@ Framework 侧异步注册失败不会阻止业务应用启动。
 - `notice_level`
 - `notice_type`
 
-## 0.7.0 治理协议边界
+## 内置应用字典
 
-Framework 0.7 的 `DictionaryService` 约定 `POST /dicts/snapshots` 和 `GET /dicts/{dictCode}/items/all`。当前发布分支的 `DictController` 尚未实现这两个端点，只提供本页列出的 CRUD、分页和 options API。
-
-因此在后端契约补齐前：
-
-- 应用保持 `opensabre.governance.dictionary.registration-enabled=false`；
-- 不把 Framework 的字典预热/读取链路视为已端到端交付；
-- 前端继续使用 `/v1/dicts` 的现有管理和 options 接口。
-跟踪 Issue：[https://github.com/opensabre/base-sysadmin/issues/10](https://github.com/opensabre/base-sysadmin/issues/10)
+`base-sysadmin` 启动时声明并注册管理端统计页面使用的 `usage_object_type`、
+`usage_event` 和 `usage_granularity`。`gender`、`notice_level`、`notice_type` 仍由管理员维护，
+不会被应用快照自动接管。
