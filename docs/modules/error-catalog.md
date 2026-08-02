@@ -9,10 +9,11 @@
 ```yaml
 opensabre:
   error-catalog:
-    registration-token: ${ERROR_CATALOG_REGISTRATION_TOKEN:}
+    registration-token: ${ERROR_CATALOG_REGISTRATION_TOKEN:${GOVERNANCE_REGISTRATION_TOKEN:}}
 ```
 
-生产环境必须配置非空凭据，并与所有注册应用的 `opensabre.governance.error-catalog.registration-token` 保持一致。
+生产环境必须配置非空的公共 `GOVERNANCE_REGISTRATION_TOKEN`，并与所有注册应用保持一致。
+如需能力级隔离，可用 `ERROR_CATALOG_REGISTRATION_TOKEN` 覆盖公共凭据。
 
 ## API
 
