@@ -13,7 +13,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -39,6 +41,29 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
                 .map(DictItemOption::from)
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    @Override
+    public Map<String, List<DictItemOption>> listOptions(List<String> dictCodes) {
+        List<String> codes = dictCodes == null ? List.of() : dictCodes.stream()
+                .filter(StringUtils::isNotBlank)
+                .map(String::trim)
+                .distinct()
+                .toList();
+        if (codes.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, List<DictItemOption>> result = new LinkedHashMap<>();
+        codes.forEach(code -> result.put(code, new java.util.ArrayList<>()));
+        this.list(new LambdaQueryWrapper<DictItem>()
+                        .in(DictItem::getDictCode, codes)
+                        .eq(DictItem::getStatus, STATUS_ENABLED)
+                        .orderByAsc(DictItem::getDictCode)
+                        .orderByAsc(DictItem::getSort)
+                        .orderByAsc(DictItem::getId))
+                .forEach(item -> result.get(item.getDictCode()).add(DictItemOption.from(item)));
+        return result;
     }
 
     @Override
