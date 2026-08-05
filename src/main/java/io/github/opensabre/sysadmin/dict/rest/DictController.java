@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "字典管理")
 @RestController
@@ -124,6 +125,13 @@ public class DictController {
     @Operation(summary = "启用字典项选项")
     public List<DictItemOption> itemOptions(@PathVariable String dictCode) {
         return dictItemService.listOptions(dictCode);
+    }
+
+    @GetMapping("/items/options")
+    @Operation(summary = "批量查询启用字典项")
+    public Map<String, List<DictItemOption>> itemOptions(
+            @RequestParam(name = "codes") List<String> dictCodes) {
+        return dictItemService.listOptions(dictCodes);
     }
 
     /**

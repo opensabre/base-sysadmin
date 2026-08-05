@@ -6,12 +6,21 @@ import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.model.vo.DictItemOption;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IDictItemService extends IService<DictItem> {
 
     IPage<DictItem> pageItems(String dictCode, long pageNum, long pageSize, String keywords);
 
     List<DictItemOption> listOptions(String dictCode);
+
+    /**
+     * 批量查询启用的字典项。
+     *
+     * @param dictCodes 字典编码
+     * @return 按请求编码分组的字典项
+     */
+    Map<String, List<DictItemOption>> listOptions(List<String> dictCodes);
 
     /**
      * 查询完整字典项，包含停用项。
