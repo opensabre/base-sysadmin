@@ -1,7 +1,9 @@
-package io.github.opensabre.sysadmin.dict.config;
+package io.github.opensabre.sysadmin.usage.enums;
 
+import io.github.opensabre.governance.dictionary.ClasspathDictionaryEnumProvider;
 import io.github.opensabre.governance.dictionary.DictionaryDefinition;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -9,13 +11,15 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** 验证 Sysadmin 声明的管理端字典编码和值。 */
-class SysadminDictionaryConfigTest {
+/** 验证 Framework 能自动发现 Sysadmin 声明的使用量字典。 */
+class UsageDictionaryEnumTest {
 
     @Test
-    void declaresUsageDictionariesConsumedByAdmin() {
-        Map<String, DictionaryDefinition> definitions = new SysadminDictionaryConfig()
-                .sysadminDictionaryProvider().dictionaries().stream()
+    void discoversUsageDictionariesFromApplicationPackage() {
+        Map<String, DictionaryDefinition> definitions = new ClasspathDictionaryEnumProvider(
+                new DefaultResourceLoader(),
+                java.util.List.of("io.github.opensabre.sysadmin.usage.enums"))
+                .dictionaries().stream()
                 .collect(Collectors.toMap(DictionaryDefinition::dictCode, Function.identity()));
 
         assertEquals(3, definitions.size());
