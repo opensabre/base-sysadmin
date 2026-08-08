@@ -22,9 +22,10 @@ class UsageDictionaryEnumTest {
                 .dictionaries().stream()
                 .collect(Collectors.toMap(DictionaryDefinition::dictCode, Function.identity()));
 
-        assertEquals(3, definitions.size());
+        assertEquals(4, definitions.size());
         assertEquals("验证码场景", definitions.get("usage_object_type").items().get(0).label());
         assertEquals("CAPTCHA_GENERATE", definitions.get("usage_event").items().get(0).value());
         assertEquals("HOUR", definitions.get("usage_granularity").items().get(1).value());
+        assertEquals("成功", definitions.get("usage_outcome").items().get(1).label());
     }
 }

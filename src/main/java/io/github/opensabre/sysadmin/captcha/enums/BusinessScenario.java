@@ -1,13 +1,16 @@
 package io.github.opensabre.sysadmin.captcha.enums;
 
 import lombok.Getter;
+import io.github.opensabre.governance.dictionary.DictionaryEnum;
+import io.github.opensabre.governance.dictionary.OpenSabreDictionary;
 
 /**
  * Business scenario enumeration for different captcha usage scenarios
  * Defines specific business contexts where captchas are used with their configurations
  */
 @Getter
-public enum BusinessScenario {
+@OpenSabreDictionary(code = "captcha_business_scenario", name = "验证码业务场景")
+public enum BusinessScenario implements DictionaryEnum {
 
     /**
      * Login with image captcha scenario
@@ -111,4 +114,7 @@ public enum BusinessScenario {
     public io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene toScene() {
         return io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene.from(this);
     }
+
+    public String value() { return code; }
+    public String label() { return description; }
 }

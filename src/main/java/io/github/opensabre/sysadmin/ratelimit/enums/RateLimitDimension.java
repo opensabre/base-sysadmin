@@ -1,6 +1,8 @@
 package io.github.opensabre.sysadmin.ratelimit.enums;
 
 import lombok.Getter;
+import io.github.opensabre.governance.dictionary.DictionaryEnum;
+import io.github.opensabre.governance.dictionary.OpenSabreDictionary;
 
 /**
  * 限次维度枚举
@@ -10,7 +12,8 @@ import lombok.Getter;
  * @since 1.0.0
  */
 @Getter
-public enum RateLimitDimension {
+@OpenSabreDictionary(code = "rate_limit_dimension", name = "限次维度")
+public enum RateLimitDimension implements DictionaryEnum {
 
     /**
      * IP 地址维度
@@ -70,4 +73,6 @@ public enum RateLimitDimension {
         this.code = code;
         this.description = description;
     }
+    public String value() { return code; }
+    public String label() { return description; }
 }
