@@ -1,6 +1,8 @@
 package io.github.opensabre.sysadmin.ratelimit.enums;
 
 import lombok.Getter;
+import io.github.opensabre.governance.dictionary.DictionaryEnum;
+import io.github.opensabre.governance.dictionary.OpenSabreDictionary;
 
 /**
  * 限次算法类型枚举
@@ -10,7 +12,8 @@ import lombok.Getter;
  * @since 1.0.0
  */
 @Getter
-public enum RateLimitAlgorithmType {
+@OpenSabreDictionary(code = "rate_limit_algorithm", name = "限次算法")
+public enum RateLimitAlgorithmType implements DictionaryEnum {
 
     /**
      * 固定窗口计数器算法
@@ -64,4 +67,6 @@ public enum RateLimitAlgorithmType {
         this.code = code;
         this.description = description;
     }
+    public String value() { return code; }
+    public String label() { return description; }
 }

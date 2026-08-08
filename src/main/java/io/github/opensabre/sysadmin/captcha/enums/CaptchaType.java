@@ -1,12 +1,15 @@
 package io.github.opensabre.sysadmin.captcha.enums;
 
 import lombok.Getter;
+import io.github.opensabre.governance.dictionary.DictionaryEnum;
+import io.github.opensabre.governance.dictionary.OpenSabreDictionary;
 
 /**
  * Captcha type enumeration
  */
 @Getter
-public enum CaptchaType {
+@OpenSabreDictionary(code = "captcha_type", name = "验证码类型")
+public enum CaptchaType implements DictionaryEnum {
     IMAGE("image", "Image captcha"),
     SMS("sms", "SMS captcha"),
     EMAIL("email", "Email captcha"),
@@ -20,4 +23,6 @@ public enum CaptchaType {
         this.code = code;
         this.description = description;
     }
+    public String value() { return code; }
+    public String label() { return description; }
 }

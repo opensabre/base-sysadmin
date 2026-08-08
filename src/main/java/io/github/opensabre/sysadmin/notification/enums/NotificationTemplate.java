@@ -1,12 +1,15 @@
 package io.github.opensabre.sysadmin.notification.enums;
 
 import lombok.Getter;
+import io.github.opensabre.governance.dictionary.DictionaryEnum;
+import io.github.opensabre.governance.dictionary.OpenSabreDictionary;
 
 /**
  * 模板枚举
  */
 @Getter
-public enum NotificationTemplate {
+@OpenSabreDictionary(code = "notification_template", name = "通知模板")
+public enum NotificationTemplate implements DictionaryEnum {
 
     /**
      * 短信验证码
@@ -56,4 +59,6 @@ public enum NotificationTemplate {
         this.description = description;
         this.name = name;
     }
+    public String value() { return code; }
+    public String label() { return name; }
 }
