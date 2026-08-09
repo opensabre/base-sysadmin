@@ -20,6 +20,4 @@ public interface IDictTypeService extends IService<DictType> {
     boolean updateDict(String id, DictType dictType);
 
     boolean deleteByIds(String ids);
-
-    boolean isApplicationManaged(String dictCode);
 }

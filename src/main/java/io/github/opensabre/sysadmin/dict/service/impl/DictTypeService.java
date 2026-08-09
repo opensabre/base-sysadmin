@@ -96,18 +96,6 @@ public class DictTypeService extends ServiceImpl<DictTypeMapper, DictType> imple
         return removedTypes && removedItems;
     }
 
-    @Override
-    public boolean isApplicationManaged(String dictCode) {
-        if (StringUtils.isBlank(dictCode)) {
-            return false;
-        }
-        DictType dictType = this.getOne(new LambdaQueryWrapper<DictType>()
-                .select(DictType::getSourceApplication)
-                .eq(DictType::getDictCode, dictCode)
-                .last("limit 1"));
-        return dictType != null && StringUtils.isNotBlank(dictType.getSourceApplication());
-    }
-
     private void assertManuallyMaintainable(DictType dictType) {
         if (dictType != null && StringUtils.isNotBlank(dictType.getSourceApplication())) {
             throw new IllegalStateException("application-reported dictionary "

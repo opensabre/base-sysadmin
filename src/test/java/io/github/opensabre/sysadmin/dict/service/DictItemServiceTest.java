@@ -1,6 +1,7 @@
 package io.github.opensabre.sysadmin.dict.service;
 
 import io.github.opensabre.sysadmin.dict.dao.DictItemMapper;
+import io.github.opensabre.sysadmin.dict.dao.DictTypeMapper;
 import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.model.vo.DictItemOption;
 import io.github.opensabre.sysadmin.dict.service.impl.DictItemService;
@@ -52,9 +53,10 @@ class DictItemServiceTest {
     @Test
     void rejectsManualChangesToApplicationReportedDictionary() {
         DictItemService service = new DictItemService();
-        IDictTypeService typeService = mock(IDictTypeService.class);
-        ReflectionTestUtils.setField(service, "dictTypeService", typeService);
-        when(typeService.isApplicationManaged("usage_event")).thenReturn(true);
+        DictTypeMapper typeMapper = mock(DictTypeMapper.class);
+        ReflectionTestUtils.setField(service, "dictTypeMapper", typeMapper);
+        when(typeMapper.selectSourceApplicationByDictCode("usage_event"))
+                .thenReturn("base-sysadmin");
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> service.saveItem("usage_event", item("usage_event", "READ", "读取")));

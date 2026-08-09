@@ -6,10 +6,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.opensabre.sysadmin.dict.dao.DictItemMapper;
+import io.github.opensabre.sysadmin.dict.dao.DictTypeMapper;
 import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.model.vo.DictItemOption;
 import io.github.opensabre.sysadmin.dict.service.IDictItemService;
-import io.github.opensabre.sysadmin.dict.service.IDictTypeService;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
     private static final String TAG_TYPE_DEFAULT = "N";
 
     @Resource
-    private IDictTypeService dictTypeService;
+    private DictTypeMapper dictTypeMapper;
 
     @Override
     public IPage<DictItem> pageItems(String dictCode, long pageNum, long pageSize, String keywords) {
@@ -160,7 +160,7 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
     }
 
     private void assertManuallyMaintainable(String dictCode) {
-        if (dictTypeService.isApplicationManaged(dictCode)) {
+        if (StringUtils.isNotBlank(dictTypeMapper.selectSourceApplicationByDictCode(dictCode))) {
             throw new IllegalStateException("application-reported dictionary "
                     + dictCode + " cannot be manually modified");
         }
