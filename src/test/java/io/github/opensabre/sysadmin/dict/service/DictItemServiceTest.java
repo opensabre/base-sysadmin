@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -46,6 +47,20 @@ class DictItemServiceTest {
         ReflectionTestUtils.setField(service, "baseMapper", mapper);
 
         assertEquals(Map.of(), service.listOptions(List.of("", " ")));
+    }
+
+    @Test
+    void rejectsManualChangesToApplicationReportedDictionary() {
+        DictItemService service = new DictItemService();
+        IDictTypeService typeService = mock(IDictTypeService.class);
+        ReflectionTestUtils.setField(service, "dictTypeService", typeService);
+        when(typeService.isApplicationManaged("usage_event")).thenReturn(true);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> service.saveItem("usage_event", item("usage_event", "READ", "读取")));
+
+        assertEquals("application-reported dictionary usage_event cannot be manually modified",
+                exception.getMessage());
     }
 
     private DictItem item(String code, String value, String label) {

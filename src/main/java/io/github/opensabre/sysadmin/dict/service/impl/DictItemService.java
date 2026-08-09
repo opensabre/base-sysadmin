@@ -9,6 +9,8 @@ import io.github.opensabre.sysadmin.dict.dao.DictItemMapper;
 import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.model.vo.DictItemOption;
 import io.github.opensabre.sysadmin.dict.service.IDictItemService;
+import io.github.opensabre.sysadmin.dict.service.IDictTypeService;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,9 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
 
     private static final int STATUS_ENABLED = 1;
     private static final String TAG_TYPE_DEFAULT = "N";
+
+    @Resource
+    private IDictTypeService dictTypeService;
 
     @Override
     public IPage<DictItem> pageItems(String dictCode, long pageNum, long pageSize, String keywords) {
@@ -92,6 +97,7 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
         if (StringUtils.isBlank(dictCode) || item == null) {
             return false;
         }
+        assertManuallyMaintainable(dictCode);
         applyDefaults(item);
         item.setDictCode(dictCode);
         return this.save(item);
@@ -102,6 +108,7 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
         if (StringUtils.isAnyBlank(dictCode, id) || item == null) {
             return false;
         }
+        assertManuallyMaintainable(dictCode);
         applyDefaults(item);
         item.setDictCode(dictCode);
         item.setId(id);
@@ -116,6 +123,7 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
         if (StringUtils.isBlank(dictCode) || idList.isEmpty()) {
             return false;
         }
+        assertManuallyMaintainable(dictCode);
         return this.remove(new LambdaQueryWrapper<DictItem>()
                 .eq(DictItem::getDictCode, dictCode)
                 .in(DictItem::getId, idList));
@@ -148,6 +156,13 @@ public class DictItemService extends ServiceImpl<DictItemMapper, DictItem> imple
         }
         if (StringUtils.isBlank(item.getTagType())) {
             item.setTagType(TAG_TYPE_DEFAULT);
+        }
+    }
+
+    private void assertManuallyMaintainable(String dictCode) {
+        if (dictTypeService.isApplicationManaged(dictCode)) {
+            throw new IllegalStateException("application-reported dictionary "
+                    + dictCode + " cannot be manually modified");
         }
     }
 
