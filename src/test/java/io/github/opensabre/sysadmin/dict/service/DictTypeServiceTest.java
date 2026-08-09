@@ -1,11 +1,15 @@
 package io.github.opensabre.sysadmin.dict.service;
 
+import io.github.opensabre.sysadmin.dict.dao.DictItemMapper;
 import io.github.opensabre.sysadmin.dict.dao.DictTypeMapper;
 import io.github.opensabre.sysadmin.dict.model.po.DictType;
+import io.github.opensabre.sysadmin.dict.service.impl.DictItemService;
 import io.github.opensabre.sysadmin.dict.service.impl.DictTypeService;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,6 +18,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DictTypeServiceTest {
+
+    @Test
+    void dictionaryServicesStartWithoutCircularDependency() {
+        new ApplicationContextRunner()
+                .withBean(DictTypeMapper.class, () -> mock(DictTypeMapper.class))
+                .withBean(DictItemMapper.class, () -> mock(DictItemMapper.class))
+                .withBean(DictTypeService.class)
+                .withBean(DictItemService.class)
+                .run(context -> assertThat(context).hasNotFailed());
+    }
 
     @Test
     void createsManualDictionaryEvenWhenClientSuppliesApplicationOwner() {
