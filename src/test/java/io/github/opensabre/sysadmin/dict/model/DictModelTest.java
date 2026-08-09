@@ -21,6 +21,17 @@ class DictModelTest {
         assertEquals("性别", dictType.getName());
         assertEquals("gender", dictType.getDictCode());
         assertEquals(1, dictType.getStatus());
+        assertEquals(DictType.SOURCE_TYPE_MANUAL, dictType.getSourceType());
+    }
+
+    @Test
+    void derivesApplicationReportedSourceTypeFromOwner() {
+        DictType dictType = DictType.builder()
+                .dictCode("usage_event")
+                .sourceApplication("base-sysadmin")
+                .build();
+
+        assertEquals(DictType.SOURCE_TYPE_ENUM, dictType.getSourceType());
     }
 
     @Test

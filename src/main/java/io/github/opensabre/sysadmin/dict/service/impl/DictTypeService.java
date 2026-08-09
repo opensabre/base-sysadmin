@@ -57,6 +57,8 @@ public class DictTypeService extends ServiceImpl<DictTypeMapper, DictType> imple
         if (dictType.getStatus() == null) {
             dictType.setStatus(STATUS_ENABLED);
         }
+        // 通用 CRUD 只创建手工维护字典；应用归属只能由快照注册流程写入。
+        dictType.setSourceApplication(null);
         return this.save(dictType);
     }
 
@@ -65,9 +67,12 @@ public class DictTypeService extends ServiceImpl<DictTypeMapper, DictType> imple
         if (StringUtils.isBlank(id) || dictType == null) {
             return false;
         }
+        DictType current = this.getById(id);
+        assertManuallyMaintainable(current);
         if (dictType.getStatus() == null) {
             dictType.setStatus(STATUS_ENABLED);
         }
+        dictType.setSourceApplication(null);
         dictType.setId(id);
         return this.update(dictType, new LambdaUpdateWrapper<DictType>().eq(DictType::getId, id));
     }
@@ -79,16 +84,35 @@ public class DictTypeService extends ServiceImpl<DictTypeMapper, DictType> imple
         if (idList.isEmpty()) {
             return false;
         }
-        List<String> dictCodes = this.list(new LambdaQueryWrapper<DictType>()
-                        .select(DictType::getDictCode)
-                        .in(DictType::getId, idList))
-                .stream()
+        List<DictType> dictTypes = this.list(new LambdaQueryWrapper<DictType>()
+                .in(DictType::getId, idList));
+        dictTypes.forEach(this::assertManuallyMaintainable);
+        List<String> dictCodes = dictTypes.stream()
                 .map(DictType::getDictCode)
                 .filter(StringUtils::isNotBlank)
                 .toList();
         boolean removedTypes = this.removeByIds(idList);
         boolean removedItems = dictItemService.deleteByDictCodes(dictCodes);
         return removedTypes && removedItems;
+    }
+
+    @Override
+    public boolean isApplicationManaged(String dictCode) {
+        if (StringUtils.isBlank(dictCode)) {
+            return false;
+        }
+        DictType dictType = this.getOne(new LambdaQueryWrapper<DictType>()
+                .select(DictType::getSourceApplication)
+                .eq(DictType::getDictCode, dictCode)
+                .last("limit 1"));
+        return dictType != null && StringUtils.isNotBlank(dictType.getSourceApplication());
+    }
+
+    private void assertManuallyMaintainable(DictType dictType) {
+        if (dictType != null && StringUtils.isNotBlank(dictType.getSourceApplication())) {
+            throw new IllegalStateException("application-reported dictionary "
+                    + dictType.getDictCode() + " cannot be manually modified");
+        }
     }
 
     private LambdaQueryWrapper<DictType> baseQuery(String keywords, Integer status) {

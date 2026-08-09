@@ -19,6 +19,9 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class DictType extends BasePo {
 
+    public static final String SOURCE_TYPE_MANUAL = "MANUAL";
+    public static final String SOURCE_TYPE_ENUM = "ENUM";
+
     private String name;
 
     private String dictCode;
@@ -31,4 +34,13 @@ public class DictType extends BasePo {
     private Integer status;
 
     private String remark;
+
+    /**
+     * 对外展示的来源类型，不重复持久化，避免与应用归属字段产生不一致。
+     */
+    public String getSourceType() {
+        return sourceApplication == null || sourceApplication.isBlank()
+                ? SOURCE_TYPE_MANUAL
+                : SOURCE_TYPE_ENUM;
+    }
 }
