@@ -32,8 +32,8 @@ opensabre:
     internal-token:
       write-enabled: ${INTERNAL_TOKEN_KEY_WRITE_ENABLED:false}
       nacos-server-url: http://${REGISTER_HOST:localhost}:${REGISTER_PORT:8848}
-      data-id: ${OPENSABRE_SECURITY_CONFIG_DATA_ID:opensabre-security.yml}
-      group: ${OPENSABRE_SECURITY_CONFIG_GROUP:DEFAULT_GROUP}
+      data-id: ${OPENSABRE_COMMON_CONFIG_DATA_ID:opensabre-common.yml}
+      group: ${OPENSABRE_COMMON_CONFIG_GROUP:DEFAULT_GROUP}
       namespace: ${REGISTER_NAMESPACE:}
       rotation-grace-period: ${INTERNAL_TOKEN_KEY_ROTATION_GRACE_PERIOD:5m}
   error-catalog:
