@@ -3,7 +3,7 @@
 ## 介绍
 
 `base-sysadmin` 提供内部 Token 共享 HMAC 密钥的控制面。所有应用从同一份
-Nacos 配置 `opensabre-security.yml` 读取 active/previous 双密钥；管理端只展示
+Nacos 公共配置 `opensabre-common.yml` 读取 active/previous 双密钥；管理端只展示
 密钥元数据，不通过 API 或日志返回密钥内容。
 
 控制面只依赖这份稳定的 YAML 协议，不依赖尚未发布的
@@ -28,7 +28,7 @@ opensabre:
     internal-token:
       write-enabled: false
       nacos-server-url: http://localhost:8848
-      data-id: opensabre-security.yml
+      data-id: opensabre-common.yml
       group: DEFAULT_GROUP
       namespace: ""
       rotation-grace-period: 5m
@@ -41,12 +41,13 @@ opensabre:
 | `INTERNAL_TOKEN_KEY_WRITE_ENABLED` | `false` | 是否允许轮换和退役 |
 | `REGISTER_HOST` / `REGISTER_PORT` | `localhost` / `8848` | Nacos 地址 |
 | `REGISTER_NAMESPACE` | 空 | Nacos namespace |
-| `OPENSABRE_SECURITY_CONFIG_DATA_ID` | `opensabre-security.yml` | 共享配置 Data ID |
-| `OPENSABRE_SECURITY_CONFIG_GROUP` | `DEFAULT_GROUP` | 共享配置 Group |
+| `OPENSABRE_COMMON_CONFIG_DATA_ID` | `opensabre-common.yml` | 公共配置 Data ID |
+| `OPENSABRE_COMMON_CONFIG_GROUP` | `DEFAULT_GROUP` | 公共配置 Group |
 | `INTERNAL_TOKEN_KEY_ROTATION_GRACE_PERIOD` | `5m` | previous 密钥保护期，不得少于 125 秒 |
 
 开启写操作前，必须确认各 Servlet 应用已经加载同一 namespace/group/data-id，
-且内部 Token 校验和时钟同步正常。
+且内部 Token 校验和时钟同步正常。当前公共配置不支持热刷新，轮换后必须滚动重启
+所有相关应用。
 
 ## API
 
@@ -100,8 +101,9 @@ opensabre:
 3. 服务端生成新密钥，将旧 active 设置为 previous，并写入退役时间。
 4. 使用 Nacos CAS 发布共享配置。
 5. `@Audit` 将操作人、原因、目标 key id、响应或异常写入通用审计日志。
-6. 等待所有应用刷新配置并超过保护期。
-7. 使用最新 `configVersion` 提交 previous 退役请求。
+6. 按接收方优先、调用方随后滚动重启所有相关应用。
+7. 确认每个实例均加载新的 `configVersion`，并等待超过保护期。
+8. 使用最新 `configVersion` 提交 previous 退役请求。
 
 ## 事实源
 
@@ -114,5 +116,5 @@ opensabre:
 
 - 管理台页面已实现，只展示安全元数据和审计记录。
 - examples 已接入首应用 JWT 校验、首次签发和 Servlet 逐跳重签配置。
-- 生产写开关仍保持关闭；完成环境级双密钥轮换演练后再由运维开启。
+- 生产写开关仍保持关闭；完成包含滚动重启的环境级双密钥轮换演练后再由运维开启。
 - WebFlux/WebClient 链路不在 0.7.0 当前迭代范围内。

@@ -23,6 +23,8 @@ class NacosInternalTokenSharedConfigRepositoryTest {
 
             assertThat(context.getBean(NacosInternalTokenSharedConfigRepository.class))
                     .isNotNull();
+            assertThat(context.getBean(InternalTokenKeyManagementProperties.class).getDataId())
+                    .isEqualTo("opensabre-common.yml");
         }
     }
 }

@@ -16,7 +16,7 @@ public class InternalTokenKeyManagementProperties {
 
     private boolean writeEnabled;
     private String nacosServerUrl = "http://localhost:8848";
-    private String dataId = "opensabre-security.yml";
+    private String dataId = "opensabre-common.yml";
     private String group = "DEFAULT_GROUP";
     private String namespace = "";
     private Duration rotationGracePeriod = Duration.ofMinutes(5);
