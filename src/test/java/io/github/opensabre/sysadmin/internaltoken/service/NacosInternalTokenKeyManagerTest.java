@@ -89,6 +89,23 @@ class NacosInternalTokenKeyManagerTest {
         assertThat(repository.publishCount).isZero();
     }
 
+    @Test
+    void shouldRejectRetirementUntilEveryInstanceLoadsCurrentVersion() {
+        InMemoryRepository repository = new InMemoryRepository(INITIAL_CONFIG);
+        manager(repository, NOW, true).rotate(1, "key-2");
+        InternalTokenKeyManagementProperties properties = new InternalTokenKeyManagementProperties();
+        properties.setWriteEnabled(true);
+        properties.setRotationGracePeriod(Duration.ofMinutes(5));
+        NacosInternalTokenKeyManager manager = new NacosInternalTokenKeyManager(
+                repository, properties, new SecureRandom(),
+                Clock.fixed(NOW.plusSeconds(301), ZoneOffset.UTC),
+                (version, keyId) -> { throw new IllegalStateException("stale instance"); });
+
+        assertThatIllegalStateException().isThrownBy(() -> manager.retirePrevious(2))
+                .withMessageContaining("stale instance");
+        assertThat(repository.content).contains("previous-key:");
+    }
+
     private static NacosInternalTokenKeyManager manager(
             InMemoryRepository repository, Instant instant, boolean writeEnabled) {
         InternalTokenKeyManagementProperties properties =
@@ -107,7 +124,8 @@ class NacosInternalTokenKeyManagerTest {
                 repository,
                 properties,
                 random,
-                Clock.fixed(instant, ZoneOffset.UTC));
+                Clock.fixed(instant, ZoneOffset.UTC),
+                (version, keyId) -> { });
     }
 
     private static final class InMemoryRepository

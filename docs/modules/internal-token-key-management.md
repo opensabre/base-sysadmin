@@ -44,10 +44,11 @@ opensabre:
 | `OPENSABRE_COMMON_CONFIG_DATA_ID` | `opensabre-common.yml` | 公共配置 Data ID |
 | `OPENSABRE_COMMON_CONFIG_GROUP` | `DEFAULT_GROUP` | 公共配置 Group |
 | `INTERNAL_TOKEN_KEY_ROTATION_GRACE_PERIOD` | `5m` | previous 密钥保护期，不得少于 125 秒 |
+| `INTERNAL_TOKEN_REQUIRED_APPLICATIONS` | 四个基础应用 | 退役 previous 前必须确认的应用清单 |
 
 开启写操作前，必须确认各 Servlet 应用已经加载同一 namespace/group/data-id，
-且内部 Token 校验和时钟同步正常。当前公共配置不支持热刷新，轮换后必须滚动重启
-所有相关应用。
+且内部 Token 校验和时钟同步正常。相关应用通过 Nacos 热刷新配置，并通过安全的
+Actuator 状态端点报告当前版本。
 
 ## API
 
@@ -101,8 +102,8 @@ opensabre:
 3. 服务端生成新密钥，将旧 active 设置为 previous，并写入退役时间。
 4. 使用 Nacos CAS 发布共享配置。
 5. `@Audit` 将操作人、原因、目标 key id、响应或异常写入通用审计日志。
-6. 按接收方优先、调用方随后滚动重启所有相关应用。
-7. 确认每个实例均加载新的 `configVersion`，并等待超过保护期。
+6. 等待 Nacos 将配置热刷新到相关应用。
+7. Sysadmin 确认每个已发现实例均加载新的 `configVersion`，并等待超过保护期。
 8. 使用最新 `configVersion` 提交 previous 退役请求。
 
 ## 事实源
@@ -116,5 +117,5 @@ opensabre:
 
 - 管理台页面已实现，只展示安全元数据和审计记录。
 - examples 已接入首应用 JWT 校验、首次签发和 Servlet 逐跳重签配置。
-- 生产写开关仍保持关闭；完成包含滚动重启的环境级双密钥轮换演练后再由运维开启。
+- 生产写开关仍保持关闭；完成环境级热刷新与双密钥轮换演练后再由运维开启。
 - WebFlux/WebClient 链路不在 0.7.0 当前迭代范围内。
