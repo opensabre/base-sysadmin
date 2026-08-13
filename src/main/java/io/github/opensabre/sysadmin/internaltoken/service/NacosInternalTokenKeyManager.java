@@ -28,23 +28,27 @@ public class NacosInternalTokenKeyManager {
     private final InternalTokenKeyManagementProperties properties;
     private final SecureRandom secureRandom;
     private final Clock clock;
+    private final InternalTokenInstanceVersionVerifier instanceVersionVerifier;
 
     @Autowired
     public NacosInternalTokenKeyManager(
             InternalTokenSharedConfigRepository repository,
-            InternalTokenKeyManagementProperties properties) {
-        this(repository, properties, new SecureRandom(), Clock.systemUTC());
+            InternalTokenKeyManagementProperties properties,
+            InternalTokenInstanceVersionVerifier instanceVersionVerifier) {
+        this(repository, properties, new SecureRandom(), Clock.systemUTC(), instanceVersionVerifier);
     }
 
     NacosInternalTokenKeyManager(
             InternalTokenSharedConfigRepository repository,
             InternalTokenKeyManagementProperties properties,
             SecureRandom secureRandom,
-            Clock clock) {
+            Clock clock,
+            InternalTokenInstanceVersionVerifier instanceVersionVerifier) {
         this.repository = repository;
         this.properties = properties;
         this.secureRandom = secureRandom;
         this.clock = clock;
+        this.instanceVersionVerifier = instanceVersionVerifier;
     }
 
     public InternalTokenKeyManagementStatus currentStatus() {
@@ -64,6 +68,7 @@ public class NacosInternalTokenKeyManager {
         InternalTokenSecurityConfigDocument document = document(snapshot);
         InternalTokenKeyManagementStatus before = document.status();
         requireExpectedVersion(expectedConfigVersion, before.configVersion());
+
         if (newKeyId.equals(before.activeKeyId())
                 || newKeyId.equals(before.previousKeyId())) {
             throw new IllegalArgumentException("新密钥 ID 必须与 active/previous 密钥不同");
@@ -87,6 +92,8 @@ public class NacosInternalTokenKeyManager {
         InternalTokenSecurityConfigDocument document = document(snapshot);
         InternalTokenKeyManagementStatus before = document.status();
         requireExpectedVersion(expectedConfigVersion, before.configVersion());
+
+        instanceVersionVerifier.requireAllInstances(before.configVersion(), before.activeKeyId());
 
         document.retirePrevious(Instant.now(clock));
         String updatedContent = document.dump();

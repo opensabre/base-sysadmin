@@ -36,6 +36,7 @@ opensabre:
       group: ${OPENSABRE_COMMON_CONFIG_GROUP:DEFAULT_GROUP}
       namespace: ${REGISTER_NAMESPACE:}
       rotation-grace-period: ${INTERNAL_TOKEN_KEY_ROTATION_GRACE_PERIOD:5m}
+      required-applications: ${INTERNAL_TOKEN_REQUIRED_APPLICATIONS:base-authorization,base-organization,base-sysadmin,base-gateway-admin}
   error-catalog:
     registration-token: ${ERROR_CATALOG_REGISTRATION_TOKEN:${GOVERNANCE_REGISTRATION_TOKEN:}}
   sensitive:
