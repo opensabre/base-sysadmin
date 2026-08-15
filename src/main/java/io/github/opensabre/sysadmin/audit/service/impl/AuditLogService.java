@@ -3,7 +3,7 @@ package io.github.opensabre.sysadmin.audit.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import io.github.opensabre.sysadmin.audit.model.po.AuditLog;
 import io.github.opensabre.sysadmin.audit.dao.AuditLogMapper;
 import io.github.opensabre.sysadmin.audit.model.param.AuditLogQueryParam;

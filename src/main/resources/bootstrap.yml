@@ -1,5 +1,0 @@
-server:
-  port: ${SERVER_PORT:8020}
-spring:
-  application:
-    name: base-sysadmin

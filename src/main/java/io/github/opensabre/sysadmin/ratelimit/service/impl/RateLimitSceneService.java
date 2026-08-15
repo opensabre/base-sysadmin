@@ -2,7 +2,7 @@ package io.github.opensabre.sysadmin.ratelimit.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import io.github.opensabre.sysadmin.ratelimit.dao.RateLimitSceneMapper;
 import io.github.opensabre.sysadmin.ratelimit.model.RateLimitScene;
 import io.github.opensabre.sysadmin.ratelimit.service.IRateLimitSceneService;

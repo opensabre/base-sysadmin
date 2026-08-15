@@ -10,17 +10,22 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Polls the safe actuator endpoint of every discovered instance before previous-key retirement. */
 @Component
-public class DiscoveryInternalTokenInstanceVersionVerifier implements InternalTokenInstanceVersionVerifier {
+public class DiscoveryInternalTokenInstanceVersionVerifier
+        implements InternalTokenInstanceVersionVerifier {
+
     private static final String STATUS_PATH = "/actuator/internalTokenKeyStatus";
+
     private final DiscoveryClient discoveryClient;
-    private final RestClient.Builder restClientBuilder;
+    private final RestClient restClient;
     private final InternalTokenKeyManagementProperties properties;
 
-    public DiscoveryInternalTokenInstanceVersionVerifier(DiscoveryClient discoveryClient,
-            RestClient.Builder restClientBuilder, InternalTokenKeyManagementProperties properties) {
+    public DiscoveryInternalTokenInstanceVersionVerifier(
+            DiscoveryClient discoveryClient,
+            InternalTokenKeyManagementProperties properties) {
         this.discoveryClient = discoveryClient;
-        this.restClientBuilder = restClientBuilder;
+        this.restClient = RestClient.create();
         this.properties = properties;
     }
 
@@ -35,9 +40,12 @@ public class DiscoveryInternalTokenInstanceVersionVerifier implements InternalTo
             }
             for (ServiceInstance instance : instances) {
                 try {
-                    InstanceRefreshStatus status = restClientBuilder.build().get()
-                            .uri(instance.getUri().resolve(STATUS_PATH)).retrieve().body(InstanceRefreshStatus.class);
-                    if (status == null || !status.successful() || status.configVersion() != configVersion
+                    InstanceRefreshStatus status = restClient.get()
+                            .uri(instance.getUri().resolve(STATUS_PATH))
+                            .retrieve()
+                            .body(InstanceRefreshStatus.class);
+                    if (status == null || !status.successful()
+                            || status.configVersion() != configVersion
                             || !activeKeyId.equals(status.activeKeyId())) {
                         failures.add(application + "@" + instance.getHost() + ": stale version");
                     }
@@ -47,11 +55,16 @@ public class DiscoveryInternalTokenInstanceVersionVerifier implements InternalTo
             }
         }
         if (!failures.isEmpty()) {
-            throw new IllegalStateException("仍有应用实例未确认加载当前内部 Token 密钥版本: "
-                    + String.join(", ", failures));
+            throw new IllegalStateException(
+                    "仍有应用实例未确认加载当前内部 Token 密钥版本: " + String.join(", ", failures));
         }
     }
 
-    record InstanceRefreshStatus(long configVersion, String activeKeyId, Instant refreshedAt,
-                                 boolean successful, String message) { }
+    record InstanceRefreshStatus(
+            long configVersion,
+            String activeKeyId,
+            Instant refreshedAt,
+            boolean successful,
+            String message) {
+    }
 }

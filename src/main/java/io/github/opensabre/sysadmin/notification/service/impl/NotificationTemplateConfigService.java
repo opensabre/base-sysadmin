@@ -2,7 +2,7 @@ package io.github.opensabre.sysadmin.notification.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import io.github.opensabre.sysadmin.notification.dao.NotificationTemplateMapper;
 import io.github.opensabre.sysadmin.notification.enums.NotificationType;
 import io.github.opensabre.sysadmin.notification.model.po.NotificationTemplateConfig;

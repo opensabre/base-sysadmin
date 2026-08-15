@@ -97,11 +97,16 @@ class NacosInternalTokenKeyManagerTest {
         properties.setWriteEnabled(true);
         properties.setRotationGracePeriod(Duration.ofMinutes(5));
         NacosInternalTokenKeyManager manager = new NacosInternalTokenKeyManager(
-                repository, properties, new SecureRandom(),
+                repository,
+                properties,
+                new SecureRandom(),
                 Clock.fixed(NOW.plusSeconds(301), ZoneOffset.UTC),
-                (version, keyId) -> { throw new IllegalStateException("stale instance"); });
+                (version, keyId) -> {
+                    throw new IllegalStateException("stale instance");
+                });
 
-        assertThatIllegalStateException().isThrownBy(() -> manager.retirePrevious(2))
+        assertThatIllegalStateException()
+                .isThrownBy(() -> manager.retirePrevious(2))
                 .withMessageContaining("stale instance");
         assertThat(repository.content).contains("previous-key:");
     }
