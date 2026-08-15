@@ -1,7 +1,7 @@
 package io.github.opensabre.sysadmin.captcha.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import io.github.opensabre.sysadmin.captcha.service.ICaptchaStorageService;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaInfo;
 import io.github.opensabre.sysadmin.captcha.model.po.CaptchaScene;
@@ -43,7 +43,7 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
             } else {
                 log.warn("Captcha already expired when saving: {}", key);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Error serializing captcha entity", e);
             throw new RuntimeException("Error serializing captcha entity", e);
         }
@@ -57,7 +57,7 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
         if (jsonStr != null && !jsonStr.isEmpty()) {
             try {
                 return objectMapper.readValue(jsonStr, CaptchaInfo.class);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Error deserializing captcha entity", e);
                 return null;
             }
@@ -100,7 +100,7 @@ public class RedisICaptchaStorage implements ICaptchaStorageService {
                     String updatedJsonStr = objectMapper.writeValueAsString(captchaInfo);
                     stringRedisTemplate.opsForValue().set(key, updatedJsonStr, ttl, TimeUnit.SECONDS);
                 }
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Error processing captcha entity", e);
             }
         }

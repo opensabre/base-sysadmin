@@ -1,6 +1,6 @@
 package io.github.opensabre.sysadmin.notification.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import io.github.opensabre.sysadmin.notification.enums.NotificationSendStatus;
 import io.github.opensabre.sysadmin.notification.enums.NotificationType;
 import io.github.opensabre.sysadmin.notification.model.form.NotificationSendForm;

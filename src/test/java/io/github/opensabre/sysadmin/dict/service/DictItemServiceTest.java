@@ -1,11 +1,14 @@
 package io.github.opensabre.sysadmin.dict.service;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import io.github.opensabre.sysadmin.dict.dao.DictItemMapper;
 import io.github.opensabre.sysadmin.dict.dao.DictTypeMapper;
 import io.github.opensabre.sysadmin.dict.model.po.DictItem;
 import io.github.opensabre.sysadmin.dict.model.vo.DictItemOption;
 import io.github.opensabre.sysadmin.dict.service.impl.DictItemService;
 import org.junit.jupiter.api.Test;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -22,6 +25,8 @@ class DictItemServiceTest {
 
     @Test
     void queriesDistinctCodesOnceAndKeepsMissingGroups() {
+        TableInfoHelper.initTableInfo(
+                new MapperBuilderAssistant(new MybatisConfiguration(), "test"), DictItem.class);
         DictItemMapper mapper = mock(DictItemMapper.class);
         DictItemService service = new DictItemService();
         ReflectionTestUtils.setField(service, "baseMapper", mapper);

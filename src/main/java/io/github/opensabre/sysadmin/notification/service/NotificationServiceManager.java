@@ -1,8 +1,8 @@
 package io.github.opensabre.sysadmin.notification.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import io.github.opensabre.sysadmin.notification.enums.NotificationTemplate;
 import io.github.opensabre.sysadmin.notification.enums.NotificationSendStatus;
 import io.github.opensabre.sysadmin.notification.enums.NotificationType;
@@ -202,7 +202,7 @@ public class NotificationServiceManager {
     private String toJson(Map<String, String> args) {
         try {
             return objectMapper.writeValueAsString(args == null ? Collections.emptyMap() : args);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Failed to serialize notification args", e);
         }
     }
@@ -214,7 +214,7 @@ public class NotificationServiceManager {
         try {
             return objectMapper.readValue(argsJson, new TypeReference<>() {
             });
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Failed to parse notification args", e);
         }
     }

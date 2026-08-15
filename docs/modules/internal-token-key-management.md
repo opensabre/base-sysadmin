@@ -44,11 +44,11 @@ opensabre:
 | `OPENSABRE_COMMON_CONFIG_DATA_ID` | `opensabre-common.yml` | 公共配置 Data ID |
 | `OPENSABRE_COMMON_CONFIG_GROUP` | `DEFAULT_GROUP` | 公共配置 Group |
 | `INTERNAL_TOKEN_KEY_ROTATION_GRACE_PERIOD` | `5m` | previous 密钥保护期，不得少于 125 秒 |
-| `INTERNAL_TOKEN_REQUIRED_APPLICATIONS` | 四个基础应用 | 退役 previous 前必须确认的应用清单 |
 
 开启写操作前，必须确认各 Servlet 应用已经加载同一 namespace/group/data-id，
 且内部 Token 校验和时钟同步正常。相关应用通过 Nacos 热刷新配置，并通过安全的
-Actuator 状态端点报告当前版本。
+Actuator 状态端点报告当前版本；可用 `INTERNAL_TOKEN_REQUIRED_APPLICATIONS` 配置
+退役 previous 前必须确认的应用清单。
 
 ## API
 
