@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS `base_sys_error_catalog` (
     `deprecated` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已废弃',
     `description` varchar(1000) DEFAULT NULL COMMENT '说明',
     `created_by` varchar(100) NOT NULL DEFAULT 'system',
-    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_by` varchar(100) NOT NULL DEFAULT 'system',
-    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `updated_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`), UNIQUE KEY `uk_error_catalog_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='全局错误码目录';

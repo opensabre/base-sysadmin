@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS `base_sys_usage_scene` (
     `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否允许计次',
     `description` varchar(255) DEFAULT NULL COMMENT '描述',
     `created_by` varchar(100) NOT NULL DEFAULT 'system',
-    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_by` varchar(100) NOT NULL DEFAULT 'system',
-    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `updated_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_usage_scene` (`object_type`, `object_id`, `usage_event`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='计次场景登记表';
