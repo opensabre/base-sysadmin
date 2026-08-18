@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS `base_sys_ratelimit_scene` (
     `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
     `description` varchar(255) DEFAULT NULL COMMENT '描述',
     `created_by` varchar(100) NOT NULL COMMENT '创建人',
-    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `created_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
     `updated_by` varchar(100) NOT NULL COMMENT '更新人',
-    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `updated_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_scene_code` (`scene_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='限次场景表';
