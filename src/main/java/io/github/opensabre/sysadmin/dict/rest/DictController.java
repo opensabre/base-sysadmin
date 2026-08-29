@@ -49,7 +49,7 @@ public class DictController {
     @Resource
     private IDictionaryRegistrationService dictionaryRegistrationService;
 
-    @Value("${opensabre.governance.dictionary.registration-token:}")
+    @Value("${opensabre.governance.registration-token:}")
     private String dictionaryRegistrationToken;
 
     /**

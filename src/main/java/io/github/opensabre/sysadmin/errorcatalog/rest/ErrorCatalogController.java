@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/error-catalog")
 public class ErrorCatalogController {
     @Resource private IErrorCatalogService errorCatalogService;
-    @Value("${opensabre.error-catalog.registration-token:}") private String registrationToken;
+    @Value("${opensabre.governance.registration-token:}") private String registrationToken;
     @PostMapping("/snapshots")
     public Result<Boolean> register(@RequestBody ErrorCatalogRegistrationRequest snapshot,
                                     @RequestHeader("X-Opensabre-Error-Catalog-Token") String token,
