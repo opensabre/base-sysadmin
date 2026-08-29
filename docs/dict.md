@@ -79,12 +79,10 @@
 ```yaml
 opensabre:
   governance:
-    dictionary:
-      registration-token: ${DICTIONARY_REGISTRATION_TOKEN:${GOVERNANCE_REGISTRATION_TOKEN:${ERROR_CATALOG_REGISTRATION_TOKEN:}}}
+    registration-token: ENC(...)
 ```
 
-字典与错误码注册默认共享 `GOVERNANCE_REGISTRATION_TOKEN`。如需能力级隔离，可用
-`DICTIONARY_REGISTRATION_TOKEN` 单独覆盖；`ERROR_CATALOG_REGISTRATION_TOKEN` 保留为旧部署兼容回退。
+字典与错误码注册统一读取 Nacos 公共配置 `opensabre.governance.registration-token`，推荐使用 Jasypt `ENC(...)` 密文。
 服务端使用常量时间比较，且不会在日志、响应或审计中输出凭据。未配置凭据时注册接口默认拒绝请求。
 
 `dictCode` 的首次定义归注册应用所有。管理员维护的存量字典不会被应用自动接管，

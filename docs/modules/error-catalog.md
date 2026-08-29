@@ -8,12 +8,11 @@
 
 ```yaml
 opensabre:
-  error-catalog:
-    registration-token: ${ERROR_CATALOG_REGISTRATION_TOKEN:${GOVERNANCE_REGISTRATION_TOKEN:}}
+  governance:
+    registration-token: ENC(...)
 ```
 
-生产环境必须配置非空的公共 `GOVERNANCE_REGISTRATION_TOKEN`，并与所有注册应用保持一致。
-如需能力级隔离，可用 `ERROR_CATALOG_REGISTRATION_TOKEN` 覆盖公共凭据。
+生产环境必须在 Nacos 公共配置中设置非空的 `opensabre.governance.registration-token`，并由所有注册应用共享。推荐使用 Jasypt `ENC(...)` 密文。
 
 ## API
 

@@ -39,9 +39,6 @@ spring:
       maximum-pool-size: 20
 # opensabre framework配置
 opensabre:
-  governance:
-    dictionary:
-      registration-token: ${DICTIONARY_REGISTRATION_TOKEN:${GOVERNANCE_REGISTRATION_TOKEN:${ERROR_CATALOG_REGISTRATION_TOKEN:}}}
   sysadmin:
     internal-token:
       write-enabled: ${INTERNAL_TOKEN_KEY_WRITE_ENABLED:false}
@@ -51,8 +48,6 @@ opensabre:
       namespace: ${REGISTER_NAMESPACE:}
       rotation-grace-period: ${INTERNAL_TOKEN_KEY_ROTATION_GRACE_PERIOD:5m}
       required-applications: ${INTERNAL_TOKEN_REQUIRED_APPLICATIONS:base-authorization,base-organization,base-sysadmin,base-gateway-admin}
-  error-catalog:
-    registration-token: ${ERROR_CATALOG_REGISTRATION_TOKEN:${GOVERNANCE_REGISTRATION_TOKEN:}}
   sensitive:
     log:
       enabled: false # 日志脱敏开关，默认关闭
@@ -80,6 +75,8 @@ logging:
   level:
     io.github.opensabre: debug
     java.sql.PreparedStatement: debug
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-},%X{parentSpanId:-}]'
 
 mybatis-plus:
   global-config:
