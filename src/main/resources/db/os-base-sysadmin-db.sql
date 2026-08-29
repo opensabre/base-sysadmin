@@ -27,7 +27,8 @@ INSERT INTO `base_sys_dict_type` (`id`, `name`, `dict_code`, `status`, `remark`,
 VALUES
 ('DICT_GENDER', '性别', 'gender', 1, '用户性别', 'system', 'system'),
 ('DICT_NOTICE_LEVEL', '通知级别', 'notice_level', 1, '通知公告级别', 'system', 'system'),
-('DICT_NOTICE_TYPE', '通知类型', 'notice_type', 1, '通知公告类型', 'system', 'system');
+('DICT_NOTICE_TYPE', '通知类型', 'notice_type', 1, '通知公告类型', 'system', 'system'),
+('DICT_IQC_RULE_CATEGORY', 'IQC 规则分类', 'iqc_rule_category', 1, 'IQC 规则业务分类（管理员可维护）', 'system', 'system');
 
 INSERT INTO `base_sys_dict_item` (`id`, `dict_code`, `label`, `value`, `status`, `sort`, `tag_type`, `created_by`, `updated_by`)
 VALUES
@@ -42,4 +43,10 @@ VALUES
 ('DICT_NOTICE_TYPE_SECURITY', 'notice_type', '安全警告', 'SECURITY_WARNING', 1, 3, 'D', 'system', 'system'),
 ('DICT_NOTICE_TYPE_HOLIDAY', 'notice_type', '假期通知', 'HOLIDAY_NOTICE', 1, 4, 'S', 'system', 'system'),
 ('DICT_NOTICE_TYPE_NEWS', 'notice_type', '公司新闻', 'COMPANY_NEWS', 1, 5, 'P', 'system', 'system'),
-('DICT_NOTICE_TYPE_OTHER', 'notice_type', '其他', 'OTHER', 1, 99, 'I', 'system', 'system');
+('DICT_NOTICE_TYPE_OTHER', 'notice_type', '其他', 'OTHER', 1, 99, 'I', 'system', 'system'),
+('DICT_IQC_RULE_CAT_SERVICE', 'iqc_rule_category', '服务质量', 'SERVICE_QUALITY', 1, 10, 'P', 'system', 'system'),
+('DICT_IQC_RULE_CAT_COMPLIANCE', 'iqc_rule_category', '合规审查', 'COMPLIANCE', 1, 20, 'W', 'system', 'system'),
+('DICT_IQC_RULE_CAT_SALES', 'iqc_rule_category', '销售规范', 'SALES', 1, 30, 'S', 'system', 'system'),
+('DICT_IQC_RULE_CAT_RISK', 'iqc_rule_category', '风险控制', 'RISK_CONTROL', 1, 40, 'D', 'system', 'system'),
+('DICT_IQC_RULE_CAT_PRIVACY', 'iqc_rule_category', '数据与隐私', 'DATA_PRIVACY', 1, 50, 'I', 'system', 'system'),
+('DICT_IQC_RULE_CAT_CUSTOM', 'iqc_rule_category', '自定义', 'CUSTOM', 1, 99, 'N', 'system', 'system');
