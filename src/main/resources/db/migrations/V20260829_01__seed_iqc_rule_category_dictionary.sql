@@ -1,3 +1,10 @@
+SET NAMES utf8mb4;
+
+-- 修复历史上以 latin1 连接写入的 IQC 分类中文值（幂等）。
+UPDATE `base_sys_dict_item`
+SET `label` = CONVERT(BINARY CONVERT(`label` USING latin1) USING utf8mb4)
+WHERE `dict_code` = 'iqc_rule_category' AND HEX(`label`) LIKE 'C3%';
+
 -- IQC 规则分类是后台维护字典，允许管理员在字典管理中新增、修改和停用分类。
 INSERT INTO `base_sys_dict_type`
     (`id`, `name`, `dict_code`, `source_application`, `status`, `remark`, `created_by`, `updated_by`)
