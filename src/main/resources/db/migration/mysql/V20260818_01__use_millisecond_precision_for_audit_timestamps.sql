@@ -1,4 +1,3 @@
-USE os_base_sysadmin;
 SET NAMES utf8mb4;
 
 -- 此版本迁移仅执行一次。DATETIME 不进行时区转换；历史记录已截断的毫秒无法恢复。
