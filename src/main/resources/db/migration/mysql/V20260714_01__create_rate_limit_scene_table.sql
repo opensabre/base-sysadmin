@@ -1,4 +1,3 @@
-USE os_base_sysadmin;
 SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `base_sys_ratelimit_scene` (

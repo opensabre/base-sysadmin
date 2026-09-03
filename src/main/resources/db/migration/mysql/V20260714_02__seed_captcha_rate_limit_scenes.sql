@@ -1,4 +1,3 @@
-USE os_base_sysadmin;
 SET NAMES utf8mb4;
 
 INSERT INTO base_sys_ratelimit_scene

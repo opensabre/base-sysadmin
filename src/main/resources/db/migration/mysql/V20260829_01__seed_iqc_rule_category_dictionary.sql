@@ -33,3 +33,25 @@ ON DUPLICATE KEY UPDATE
     `sort` = VALUES(`sort`),
     `tag_type` = VALUES(`tag_type`),
     `updated_by` = 'system';
+
+INSERT INTO `base_sys_dict_type`
+    (`id`, `name`, `dict_code`, `source_application`, `status`, `remark`, `created_by`, `updated_by`)
+VALUES
+    ('DICT_IQC_CONVERSATION_CHANNEL', '会话渠道', 'iqc_conversation_channel', 'iqc-platform', 1, 'IQC 会话来源渠道（系统枚举）', 'system', 'system'),
+    ('DICT_IQC_BUSINESS_TYPE', '业务类型', 'iqc_business_type', NULL, 1, 'IQC 业务类型（管理员可维护）', 'system', 'system')
+ON DUPLICATE KEY UPDATE
+    `name` = VALUES(`name`), `status` = 1, `remark` = VALUES(`remark`), `updated_by` = 'system';
+
+INSERT INTO `base_sys_dict_item`
+    (`id`, `dict_code`, `label`, `value`, `status`, `sort`, `tag_type`, `created_by`, `updated_by`)
+VALUES
+    ('DICT_IQC_CHANNEL_WEB', 'iqc_conversation_channel', '网页', 'WEB', 1, 10, 'P', 'system', 'system'),
+    ('DICT_IQC_CHANNEL_PHONE', 'iqc_conversation_channel', '电话', 'PHONE', 1, 20, 'S', 'system', 'system'),
+    ('DICT_IQC_CHANNEL_WECHAT', 'iqc_conversation_channel', '微信', 'WECHAT', 1, 30, 'P', 'system', 'system'),
+    ('DICT_IQC_CHANNEL_APP', 'iqc_conversation_channel', 'App', 'APP', 1, 40, 'S', 'system', 'system'),
+    ('DICT_IQC_CHANNEL_OTHER', 'iqc_conversation_channel', '其他', 'OTHER', 1, 99, 'N', 'system', 'system'),
+    ('DICT_IQC_BUSINESS_ORDER', 'iqc_business_type', '订单', 'ORDER', 1, 10, 'P', 'system', 'system'),
+    ('DICT_IQC_BUSINESS_TICKET', 'iqc_business_type', '工单', 'TICKET', 1, 20, 'W', 'system', 'system'),
+    ('DICT_IQC_BUSINESS_COMPLAINT', 'iqc_business_type', '投诉', 'COMPLAINT', 1, 30, 'D', 'system', 'system')
+ON DUPLICATE KEY UPDATE
+    `label` = VALUES(`label`), `status` = 1, `sort` = VALUES(`sort`), `tag_type` = VALUES(`tag_type`), `updated_by` = 'system';
