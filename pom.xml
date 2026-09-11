@@ -71,6 +71,14 @@
         </dependency>
         <dependency>
             <groupId>io.github.opensabre</groupId>
+            <artifactId>opensabre-starter-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.opensabre</groupId>
+            <artifactId>opensabre-starter-monitoring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.opensabre</groupId>
             <artifactId>opensabre-starter-eda</artifactId>
         </dependency>
         <dependency>
@@ -80,17 +88,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-        </dependency>
-        <!-- Boot 4 OpenAPI endpoints and Knife4j user interface. -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-ui</artifactId>
-            <version>4.5.0</version>
         </dependency>
         <!--测试框架-->
         <dependency>
