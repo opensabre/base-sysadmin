@@ -1,5 +1,7 @@
 package io.github.opensabre.sysadmin.internaltoken.config;
 
+import io.github.opensabre.security.actuator.ActuatorMonitoringAccess;
+import io.github.opensabre.security.webmvc.InternalTokenAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -10,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -21,7 +24,9 @@ public class InternalTokenManagementSecurityConfiguration {
     private static final String MANAGEMENT_PATH = "/security/internal-token/keys/**";
 
     @Bean
-    public SecurityFilterChain sysadminSecurityFilterChain(HttpSecurity http)
+    public SecurityFilterChain sysadminSecurityFilterChain(
+            HttpSecurity http,
+            InternalTokenAuthenticationFilter internalTokenAuthenticationFilter)
             throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -29,9 +34,13 @@ public class InternalTokenManagementSecurityConfiguration {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(MANAGEMENT_PATH).hasAuthority("ADMIN")
+                        .requestMatchers(ActuatorMonitoringAccess.metricPathArray())
+                        .hasAuthority(ActuatorMonitoringAccess.AUTHORITY)
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(resourceServer -> resourceServer
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .addFilterBefore(internalTokenAuthenticationFilter,
+                        BearerTokenAuthenticationFilter.class);
         return http.build();
     }
 
