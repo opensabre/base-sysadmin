@@ -1,12 +1,15 @@
 package io.github.opensabre.sysadmin.internaltoken.service;
 
 import io.github.opensabre.sysadmin.internaltoken.config.InternalTokenKeyManagementProperties;
+import io.github.opensabre.security.actuator.ActuatorMonitoringTokenIssuer;
+import io.github.opensabre.security.token.InternalTokenConstants;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,18 +18,19 @@ import java.util.List;
 public class DiscoveryInternalTokenInstanceVersionVerifier
         implements InternalTokenInstanceVersionVerifier {
 
-    private static final String STATUS_PATH = "/actuator/internalTokenKeyStatus";
-
     private final DiscoveryClient discoveryClient;
     private final RestClient restClient;
     private final InternalTokenKeyManagementProperties properties;
+    private final ActuatorMonitoringTokenIssuer tokenIssuer;
 
     public DiscoveryInternalTokenInstanceVersionVerifier(
             DiscoveryClient discoveryClient,
-            InternalTokenKeyManagementProperties properties) {
+            InternalTokenKeyManagementProperties properties,
+            ActuatorMonitoringTokenIssuer tokenIssuer) {
         this.discoveryClient = discoveryClient;
         this.restClient = RestClient.create();
         this.properties = properties;
+        this.tokenIssuer = tokenIssuer;
     }
 
     @Override
@@ -41,7 +45,8 @@ public class DiscoveryInternalTokenInstanceVersionVerifier
             for (ServiceInstance instance : instances) {
                 try {
                     InstanceRefreshStatus status = restClient.get()
-                            .uri(instance.getUri().resolve(STATUS_PATH))
+                            .uri(statusUri(instance))
+                            .header(InternalTokenConstants.HEADER, tokenIssuer.issue(application))
                             .retrieve()
                             .body(InstanceRefreshStatus.class);
                     if (status == null || !status.successful()
@@ -58,6 +63,21 @@ public class DiscoveryInternalTokenInstanceVersionVerifier
             throw new IllegalStateException(
                     "仍有应用实例未确认加载当前内部 Token 密钥版本: " + String.join(", ", failures));
         }
+    }
+
+    static URI statusUri(ServiceInstance instance) {
+        var metadata = instance.getMetadata();
+        String scheme = metadata.getOrDefault("management.scheme", instance.isSecure() ? "https" : "http");
+        String host = metadata.getOrDefault("management.host", instance.getHost());
+        String port = metadata.getOrDefault("management.port", Integer.toString(instance.getPort()));
+        String path = metadata.getOrDefault("management.path", "/actuator");
+        if (!path.startsWith("/")) {
+            throw new IllegalArgumentException("Actuator management path must start with /");
+        }
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return URI.create(scheme + "://" + host + ":" + port + path + "/internalTokenKeyStatus");
     }
 
     record InstanceRefreshStatus(

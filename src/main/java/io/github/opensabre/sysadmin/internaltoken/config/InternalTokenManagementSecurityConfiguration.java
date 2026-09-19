@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import java.util.stream.Stream;
 
 /**
  * Verifies external JWTs at the first application and protects the key control plane.
@@ -34,8 +35,12 @@ public class InternalTokenManagementSecurityConfiguration {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(MANAGEMENT_PATH).hasAuthority("ADMIN")
+                        .requestMatchers("/actuator/internalTokenKeyStatus")
+                        .hasAuthority(ActuatorMonitoringAccess.AUTHORITY)
                         .requestMatchers(ActuatorMonitoringAccess.metricPathArray())
                         .hasAuthority(ActuatorMonitoringAccess.AUTHORITY)
+                        .requestMatchers("/actuator/**")
+                        .hasAuthority("SCOPE_actuator.read")
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
@@ -51,9 +56,16 @@ public class InternalTokenManagementSecurityConfiguration {
         authoritiesConverter.setAuthorityPrefix("");
         authoritiesConverter.setAuthoritiesClaimName("roles");
 
+        JwtGrantedAuthoritiesConverter scopeAuthoritiesConverter =
+                new JwtGrantedAuthoritiesConverter();
+
         JwtAuthenticationConverter authenticationConverter =
                 new JwtAuthenticationConverter();
-        authenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        authenticationConverter.setJwtGrantedAuthoritiesConverter(jwt ->
+                Stream.concat(authoritiesConverter.convert(jwt).stream(),
+                        scopeAuthoritiesConverter.convert(jwt).stream())
+                        .distinct()
+                        .toList());
         return authenticationConverter;
     }
 }
