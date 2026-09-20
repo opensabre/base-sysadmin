@@ -23,6 +23,6 @@
 - 新增业务模块文档放入 `docs/`。
 - 根目录不要新增零散业务 Markdown。
 - 接口文档以 Controller 的 `@RequestMapping` 和方法映射为准。
-- 表结构以 `src/main/resources/db/os-base-sysadmin-ddl.sql` 为准。
-- 初始数据以 `src/main/resources/db/os-base-sysadmin-db.sql` 为准。
+- 表结构以 `src/main/resources/db/migration/mysql/` 中的 Flyway 基线及版本迁移为准。
+- 受控初始数据以 `src/main/resources/db/migration/mysql/` 中的 Flyway 基线及数据迁移为准。
 - 新模块应在 `modules/` 下建立独立文档；历史模块文档可逐步从平铺文件迁入，但迁移时必须保留链接兼容性。

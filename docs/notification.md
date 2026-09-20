@@ -124,13 +124,13 @@
 
 ## 数据表
 
-表结构由 `src/main/resources/db/os-base-sysadmin-ddl.sql` 维护：
+表结构由 `src/main/resources/db/migration/mysql/` 中的 Flyway 基线及版本迁移维护：
 
 - `base_sys_notification_scene`
 - `base_sys_notification_template`
 - `base_sys_notification_record`
 
-初始数据由 `src/main/resources/db/os-base-sysadmin-db.sql` 维护：
+以下示例初始数据由 `src/main/resources/db/migration/mysql/dml/V20260920_01__dml_restore_legacy_controlled_seed_data.sql` 补齐：
 
 - 场景：`LOGIN_CAPTCHA`、`ORDER_CREATED`
 - 模板：`NOTIFY_TPL_LOGIN_SMS`、`NOTIFY_TPL_LOGIN_EMAIL`、`NOTIFY_TPL_ORDER_SMS`、`NOTIFY_TPL_ORDER_EMAIL`

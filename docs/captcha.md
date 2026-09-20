@@ -61,7 +61,7 @@
 - `maxLimitCount`
 - `enabled`
 
-初始数据位于 `src/main/resources/db/os-base-sysadmin-db.sql`：
+以下示例初始数据由 `src/main/resources/db/migration/mysql/dml/V20260920_01__dml_restore_legacy_controlled_seed_data.sql` 补齐：
 
 - `LOGIN_IMAGE`
 - `REGISTER_IMAGE`
@@ -105,6 +105,6 @@ captcha:
 
 ## 数据表
 
-表结构由 `src/main/resources/db/os-base-sysadmin-ddl.sql` 维护：
+表结构由 `src/main/resources/db/migration/mysql/` 中的 Flyway 基线及版本迁移维护：
 
 - `base_sys_captcha_scene`

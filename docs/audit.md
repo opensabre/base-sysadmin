@@ -24,7 +24,7 @@
 
 ## 数据表
 
-表结构由 `src/main/resources/db/os-base-sysadmin-ddl.sql` 维护。
+表结构由 `src/main/resources/db/migration/mysql/` 中的 Flyway 基线及版本迁移维护。
 
 `base_sys_audit_log` 主要字段：
 

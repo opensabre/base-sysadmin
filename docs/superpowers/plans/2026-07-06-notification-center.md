@@ -1,5 +1,7 @@
 # Notification Center Implementation Plan
 
+> Historical plan: paths to `os-base-sysadmin-*.sql` below refer to retired manual initialization files. Current database changes belong in `src/main/resources/db/migration/mysql/`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build database-managed notification scenes, channel templates, send records, and manual retry APIs in `base-sysadmin`.
