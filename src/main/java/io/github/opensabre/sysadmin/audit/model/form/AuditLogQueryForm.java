@@ -1,5 +1,6 @@
 package io.github.opensabre.sysadmin.audit.model.form;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.github.opensabre.governance.audit.annotations.OperationType;
 import io.github.opensabre.persistence.entity.form.BaseQueryForm;
 import lombok.Data;
@@ -22,11 +23,13 @@ public class AuditLogQueryForm extends BaseQueryForm<AuditLogQueryParam> {
     /**
      * 操作开始时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime operationStartTime;
 
     /**
      * 操作结束时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime operationEndTime;
 
     /**
